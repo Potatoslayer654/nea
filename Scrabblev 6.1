@@ -1,0 +1,437 @@
+import tkinter as tk
+from tkinter import ttk
+import random
+CELL_SIZE = 50      # size of each grid cell in pixels
+colour_list = []    
+colours = ["#F9E4BC", '#895129'] # colours for the board
+locked_tiles = [] # tiles what cannot move 
+board_tile_location = [] # location of all tiles on the 15x15 board
+colours_hand = ["#1E90FF","#6495ED","#4863A0","#79BAEC",'#95B9C7', '#36454F'] # colours for the hand labels 
+tile_bag = (
+    ["A"] * 9 + ["B"] * 2 + ["C"] * 2 + ["D"] * 4 + ["E"] * 12 +
+    ["F"] * 2 + ["G"] * 3 + ["H"] * 2 + ["I"] * 9 + ["J"] * 1 +
+    ["K"] * 1 + ["L"] * 4 + ["M"] * 2 + ["N"] * 6 + ["O"] * 8 +
+    ["P"] * 2 + ["Q"] * 1 + ["R"] * 6 + ["S"] * 4 + ["T"] * 6 +
+    ["U"] * 4 + ["V"] * 2 + ["W"] * 2 + ["X"] * 1 + ["Y"] * 2 + ["Z"] * 1 + ["blank"] * 2) 
+
+tile_bag_amount = len(tile_bag)
+score = {letter: score for letter, score in zip(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ", [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10])}
+frozen = False # Decide if its the users turn or not
+
+class ClassToStoreReturnedVariable:
+    def __init__ (self):
+        self.frozen = False
+        self.tile_bag = (
+        ["A"] * 9 + ["B"] * 2 + ["C"] * 2 + ["D"] * 4 + ["E"] * 12 +
+        ["F"] * 2 + ["G"] * 3 + ["H"] * 2 + ["I"] * 9 + ["J"] * 1 +
+        ["K"] * 1 + ["L"] * 4 + ["M"] * 2 + ["N"] * 6 + ["O"] * 8 +
+        ["P"] * 2 + ["Q"] * 1 + ["R"] * 6 + ["S"] * 4 + ["T"] * 6 +
+        ["U"] * 4 + ["V"] * 2 + ["W"] * 2 + ["X"] * 1 + ["Y"] * 2 + ["Z"] * 1 + ["blank"] * 2)
+        self.tile_bag_amount = 100
+        self.green_grids = []
+        self.banned_tiles = []
+        self.grid_locations =[]
+    def setFrozen (self, x):
+        self.frozen = x
+    def getFrozen (self):
+        return self.frozen
+    def setTilebag(self,x):
+        self.tile_bag = x
+    def getTilebag(self):
+        return self.tile_bag
+    def setTilebagamount(self,x):
+        self.tile_bag_amount = x
+    def getTilebagamount(self):
+        return self.tile_bag_amount
+    def setGreen_grids(self,x):
+        self.green_grids = x
+    def getGreen_grids(self):
+        return self.green_grids
+    def setBanned_tiles(self,x):
+        self.banned_tiles = x
+    def getBanned_tiles(self):
+        return self.banned_tiles
+    def setGrid_location(self,x):
+        self.grid_locations = x
+    def getGrid_location(self):
+        return self.grid_locations
+
+
+
+
+
+variable = ClassToStoreReturnedVariable()
+
+
+
+def greening_grids(event):
+    green_grids = variable.getGreen_grids()
+    widget = event.widget
+    row = widget.grid_info()['row']
+    col = widget.grid_info()['column']
+    tup = (row,col)
+    colour = widget.cget("background")
+    frozen = variable.getFrozen()
+    if row == 15 and colour != "green" and frozen == False:
+        widget.config(background = "green") 
+        green_grids.append((tup))
+    variable.setGreen_grids(green_grids)
+    print(green_grids)
+
+
+def bleaching_grids(event):
+    green_grids = variable.getGreen_grids()
+    widget = event.widget#]
+    frozen = variable.getFrozen()
+    row = widget.grid_info()['row']
+    col = widget.grid_info()['column']
+    tup = (row,col)
+    if row == 15 and tup in green_grids and frozen == False:
+        widget.config(background = "white") 
+        green_grids.remove((tup))
+    variable.setGreen_grids(green_grids)
+    
+
+def check_around_Tile(row,col):
+    grid_locations = variable.getGrid_location()
+    total = 0
+    for pos in grid_locations:
+        if pos[0] == 15:
+            total = total + 1
+    if total == 6 :
+        return True
+
+
+
+    checker = False
+    #check below it
+    if row != 0:
+        for widget in window.grid_slaves(row-1,col):
+            if isinstance(widget, tk.Label):
+                checker = True
+    #check above it 
+    if row != 14:
+        for widget in window.grid_slaves(row+1,col):
+            if isinstance(widget, tk.Label):
+                checker = True
+    #check to the left of it 
+    if col != 0:
+        for widget in window.grid_slaves(row,col-1):
+            if isinstance(widget, tk.Label):
+                checker = True
+    #check to the right of it 
+    if col != 14:
+        for widget in window.grid_slaves(row,col+1):
+            if isinstance(widget, tk.Label):
+                checker = True
+
+    tup = (row,col)
+    banned = variable.getBanned_tiles()
+    if checker == False:
+        tup = (row,col)
+        banned.append(tup)
+    fixed_banned = banned.copy()
+    for i in fixed_banned:
+         if i not in grid_locations:
+            banned.remove(i)
+    print(f"{banned} is the banned list")
+    print(f"{grid_locations} is the grid locations")
+
+
+
+    
+    if checker == True:
+        if tup in banned:
+            banned.remove(tup)
+            print(banned)
+    variable.setBanned_tiles(banned)
+
+    return checker
+
+
+
+def invalid_play_checker(checker):
+    banned_tiles = variable.getBanned_tiles()
+    print(banned_tiles)
+    #if there are tiles which are banned button will remain red
+    if len(banned_tiles) != 0 :
+        checker = False
+    if checker == False:
+        play_button.config(bg = "red")
+        play_button.config(command = invalid_input)
+    else:
+        play_button.config(bg = "white")
+        play_button.config(command = lambda x = variable.getFrozen : end_turn(x))
+
+
+
+def invalid_input():
+    print("invalid play")
+
+
+
+def drag_start(event):
+    widget = event.widget
+    widget.startX = event.x
+    widget.startY = event.y
+    widget.original_row = widget.grid_info()['row']
+    widget.original_column = widget.grid_info()['column']
+
+
+
+def drag_motion(event):
+    widget = event.widget
+    x = widget.winfo_x() - widget.startX + event.x
+    y = widget.winfo_y() - widget.startY + event.y
+    widget.place(width=CELL_SIZE, height=CELL_SIZE,x=x, y=y)
+
+
+
+def drop(event):
+    grid_locations = variable.getGrid_location()
+
+
+    widget = event.widget
+    new_row = (widget.winfo_y() + CELL_SIZE // 2) // CELL_SIZE
+    new_col = (widget.winfo_x() + CELL_SIZE // 2) // CELL_SIZE
+
+    new_tuple=(new_row,new_col)
+    org_tuple = (widget.original_row,widget.original_column)
+    # Limit to a specific grid size (15x15)
+    #checking if the location is taken and sending it back if it is
+    #check if the initial position is a locked tile
+    if org_tuple not in locked_tiles and 0 <= new_row < 15 and 0 <= new_col < 15 and  new_tuple not in grid_locations :
+                #set it to the new grid
+                widget.grid(row=new_row, column=new_col, sticky="nsew")
+                #add the new tile to the grid_location list
+                grid_locations.append(new_tuple)
+                #remove the location of the tile previous to this move in the list
+                grid_locations.remove(org_tuple)
+                #Check if the starting tile has been placed and prevent any tiles being placed until it has been placed
+                #it also will check if the the game should be frozen
+                frozen = variable.getFrozen()
+                if (7,7) not in grid_locations or frozen == True :
+                    grid_locations.append(org_tuple)
+                    grid_locations.remove(new_tuple)
+                    widget.grid(row=widget.original_row, column=widget.original_column, sticky="nsew")
+
+                if frozen == False:
+                    Tile_checker = check_around_Tile(new_row,new_col)
+                    invalid_play_checker(Tile_checker)
+
+
+    #check if the tile is being moved into the hand
+    #checking if the location is taken and sending it back if it is 
+    elif org_tuple not in locked_tiles and new_row == 15 and 3 <= new_col <=9 and new_tuple not in grid_locations:
+                widget.grid(row=new_row, column=new_col, sticky="nsew")
+                grid_locations.append(new_tuple)
+                org_tuple = (widget.original_row,widget.original_column)
+                grid_locations.remove(org_tuple)
+
+    #send back if any requirment is not met
+    else:
+        widget.grid(row=widget.original_row, column=widget.original_column, sticky="nsew")
+    variable.setGrid_location(grid_locations)
+
+
+def end_turn(x):
+    grid_locations = variable.getGrid_location()
+    for i in grid_locations:
+        if i[0] != 15 and i not in board_tile_location:
+            board_tile_location.append(i)
+
+    for i in board_tile_location:
+        if i not in locked_tiles:
+            locked_tiles.append(i)
+    x = True
+    variable.setFrozen (x)
+    check_hand()
+    variable.setGrid_location(grid_locations)
+
+
+
+
+def create_tile(empty_grid):
+    grid_locations = variable.getGrid_location()
+
+    local_tile_bag_amount = variable.getTilebagamount()
+    local_tile_bag = variable.getTilebag()
+
+    #randomly get a letter from the tile back and delete from the tile bag
+    num = random.randint(0,local_tile_bag_amount-1)
+    local_tile_bag_amount = local_tile_bag_amount - 1
+
+
+
+    letter = local_tile_bag.pop(num-1)
+    
+    #create the tile with the specified Letter
+    tile = tk.Label(window, text=letter, background="white", anchor='center')
+    tile.place(width=CELL_SIZE, height=CELL_SIZE)
+     
+
+    tile.grid(row =empty_grid[0],column=empty_grid[1], sticky="nsew",pady=5, padx=5)
+    tile_tuple = (empty_grid)
+    grid_locations.append(tile_tuple)
+    print(grid_locations)
+
+    variable.setTilebagamount(local_tile_bag_amount)
+    variable.setTilebag(local_tile_bag)
+
+    
+
+    tile.bind("<Button-1>", drag_start )
+    tile.bind("<B1-Motion>", drag_motion)
+    tile.bind("<ButtonRelease-1>", drop)
+    tile.bind("<Button-3>",greening_grids)
+    tile.bind("<Button-2>",bleaching_grids)
+
+    variable.setGrid_location(grid_locations)
+
+
+
+def check_hand():
+    grid_locations = variable.getGrid_location()
+    x = variable.getTilebagamount()
+    for i in range(3,10):
+            empty_grid = (15,i)
+            if empty_grid not in grid_locations:
+                if x == 0:
+                    print("tile bag empty")
+                else:
+                    create_tile(empty_grid)
+
+
+
+def start_game():
+    for i in range(3,10):
+            empty_grid = (15,i)
+            create_tile(empty_grid)
+
+def unfreeze():
+    x = False
+    variable.setFrozen(x)     
+
+
+def skip():
+    grid_locations = variable.getGrid_location()
+    for i in (3,9):
+        if (15,i) not in grid_locations:
+            print("Cannot skip as tiles are on the board")
+            break
+        else:
+            x = True
+            variable.setFrozen(x)
+
+
+def swap():
+    green_grids = variable.getGreen_grids()
+    local_tile_bag_amount = variable.getTilebagamount()
+    local_tile_bag = variable.getTilebag()
+    fixed = green_grids.copy()
+    if len(green_grids) != 0:
+        variable.setFrozen(True)
+
+    for i in fixed:
+        row = i[0]
+        col = i[1]
+        for widget in window.grid_slaves(row,col):
+            if isinstance(widget, tk.Label):
+                letter = widget.cget("text")
+                local_tile_bag.append(letter)
+                local_tile_bag_amount = local_tile_bag_amount + 1
+
+                num = random.randint(0,local_tile_bag_amount-1)
+                local_tile_bag_amount = local_tile_bag_amount - 1
+
+                letter = local_tile_bag.pop(num-1)
+
+                widget.config(text = letter)
+
+                widget.config(background = "white")
+                green_grids.remove((row,col))
+
+    variable.setGreen_grids(green_grids)
+    variable.setTilebag(local_tile_bag)
+    variable.setTilebagamount(local_tile_bag_amount)
+
+
+                
+
+
+
+
+
+
+window = tk.Tk()
+window.title("Grid")
+window.geometry("750x800")
+
+print(window.winfo_screenwidth())
+
+# Configure the grid to have fixed cell sizes
+for i in range(16): # Set minimum size for columns
+    window.rowconfigure(i, weight=1, minsize=CELL_SIZE) # Set minimum size for rows
+for i in range(15):
+    window.columnconfigure(i, weight=1, minsize=CELL_SIZE)   # Set minimum size for columns
+
+
+#Create Background colour for the grid
+frame = tk.Frame(window, bg=random.choice(colours))
+frame.place(width=CELL_SIZE, height=CELL_SIZE) 
+for i in range(15):
+    for j in range(15):
+        bg = random.choice(colours)
+        if len(colour_list) != 0:
+            while bg == colour_list[-1]:
+                bg = random.choice(colours)
+            if len(colour_list) > 15:
+                while bg == colour_list[-15]:
+                    bg = random.choice(colours)
+
+
+
+        colour_list.append(bg)
+        frame = tk.Frame(window, bg=bg)
+
+        frame.place(width=CELL_SIZE, height=CELL_SIZE)
+        if i == 7 and j == 7:
+            frame = tk.Frame(window, bg="black")
+            frame.grid(row=i, column=j, sticky="nsew")
+        else:
+            frame.grid(row=i, column=j, sticky="nsew")
+
+#create hand
+
+swap_button = ttk.Button(window, text="Swap",command = swap)
+swap_button.place(width=CELL_SIZE, height=CELL_SIZE)
+swap_button.grid(row=15 , column=0 , sticky="nsew")
+
+skip_button = ttk.Button(window , text="Skip",command =skip)
+skip_button.place(width=CELL_SIZE, height=CELL_SIZE)
+skip_button.grid(row=15 , column=1 , sticky="nsew")
+
+                      
+#this button will call the end_turn function
+play_button = tk.Button(window , text="Finish",bg='white',command = lambda x = variable.getFrozen : end_turn(x))
+play_button.place(width=CELL_SIZE, height=CELL_SIZE)
+play_button.grid(row=15 , column=14 , sticky="nsew")
+
+
+freeze_button = ttk.Button(window , text="unfreeze",command = unfreeze)
+freeze_button.place(width=CELL_SIZE, height=CELL_SIZE)
+freeze_button.grid(row=15 , column=13 , sticky="nsew")
+
+
+#create the labels for the users hand 
+for j in range(3,10):
+        frame = tk.Frame(window, bg=colours_hand[j-4] ,)
+        frame.place(width=CELL_SIZE, height=CELL_SIZE) 
+        frame.grid(row=15, column=j, sticky="nsew")
+
+
+start_game()
+
+
+window.mainloop()
