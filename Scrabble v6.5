@@ -1,0 +1,139 @@
+import tkinter as tk
+from tkinter import ttk
+import random
+CELL_SIZE = 50      # size of each grid cell in pixels
+colour_list = []    
+colours = ["#F9E4BC", '#895129'] # colours for the board
+locked_tiles = [] # tiles what cannot move 
+board_tile_location = [] # location of all tiles on the 15x15 board
+colours_hand = ["#1E90FF","#6495ED","#4863A0","#79BAEC",'#95B9C7', '#36454F'] # colours for the hand labels 
+tile_bag = (
+    ["A"] * 9 + ["B"] * 2 + ["C"] * 2 + ["D"] * 4 + ["E"] * 12 +
+    ["F"] * 2 + ["G"] * 3 + ["H"] * 2 + ["I"] * 9 + ["J"] * 1 +
+    ["K"] * 1 + ["L"] * 4 + ["M"] * 2 + ["N"] * 6 + ["O"] * 8 +
+    ["P"] * 2 + ["Q"] * 1 + ["R"] * 6 + ["S"] * 4 + ["T"] * 6 +
+    ["U"] * 4 + ["V"] * 2 + ["W"] * 2 + ["X"] * 1 + ["Y"] * 2 + ["Z"] * 1 + ["blank"] * 2) 
+
+tile_bag_amount = len(tile_bag)
+score = {letter: score for letter, score in zip(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ", [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10])}
+frozen = False # Decide if its the users turn or not
+
+class ClassToStoreReturnedVariable:
+    def __init__ (self):
+        self.frozen = False
+        self.tile_bag = (
+        ["A"] * 9 + ["B"] * 2 + ["C"] * 2 + ["D"] * 4 + ["E"] * 12 +
+        ["F"] * 2 + ["G"] * 3 + ["H"] * 2 + ["I"] * 9 + ["J"] * 1 +
+        ["K"] * 1 + ["L"] * 4 + ["M"] * 2 + ["N"] * 6 + ["O"] * 8 +
+        ["P"] * 2 + ["Q"] * 1 + ["R"] * 6 + ["S"] * 4 + ["T"] * 6 +
+        ["U"] * 4 + ["V"] * 2 + ["W"] * 2 + ["X"] * 1 + ["Y"] * 2 + ["Z"] * 1 + ["blank"] * 2)
+        self.tile_bag_amount = 100
+        self.green_grids = []
+        self.banned_tiles = []
+        self.grid_locations =[]
+    def setFrozen (self, x):
+        self.frozen = x
+    def getFrozen (self):
+        return self.frozen
+    def setTilebag(self,x):
+        self.tile_bag = x
+    def getTilebag(self):
+        return self.tile_bag
+    def setTilebagamount(self,x):
+        self.tile_bag_amount = x
+    def getTilebagamount(self):
+        return self.tile_bag_amount
+    def setGreen_grids(self,x):
+        self.green_grids = x
+    def getGreen_grids(self):
+        return self.green_grids
+    def setBanned_tiles(self,x):
+        self.banned_tiles = x
+    def getBanned_tiles(self):
+        return self.banned_tiles
+    def setGrid_location(self,x):
+        self.grid_locations = x
+    def getGrid_location(self):
+        return self.grid_locations
+
+
+
+
+
+variable = ClassToStoreReturnedVariable()
+
+
+
+def greening_grids(event):
+    green_grids = variable.getGreen_grids()
+    widget = event.widget
+    row = widget.grid_info()['row']
+    col = widget.grid_info()['column']
+    tup = (row,col)
+    colour = widget.cget("background")
+    frozen = variable.getFrozen()
+    if row == 15 and colour != "green" and frozen == False:
+        widget.config(background = "green") 
+        green_grids.append((tup))
+    variable.setGreen_grids(green_grids)
+    print(green_grids)
+
+
+def bleaching_grids(event):
+    green_grids = variable.getGreen_grids()
+    widget = event.widget#]
+    frozen = variable.getFrozen()
+    row = widget.grid_info()['row']
+    col = widget.grid_info()['column']
+    tup = (row,col)
+    if row == 15 and tup in green_grids and frozen == False:
+        widget.config(background = "white") 
+        green_grids.remove((tup))
+    variable.setGreen_grids(green_grids)
+    
+
+def check_around_Tile(row,col):
+    grid_locations = variable.getGrid_location()
+    total = 0
+
+
+    checker = False
+
+    #check each grid in a row
+    row_list = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    for i in range(0,15):
+        for widget in window.grid_slaves(row,i):
+            if isinstance(widget, tk.Label):
+                row_list[i] = 1
+    fixed_row_list = row_list.copy()
+    row_checker = True
+    
+    row_list_str = ''.join([str(x) for x in row_list]).strip('0')
+    row_list_trimmed = [int(x) for x in row_list_str]
+    if 0 in row_list_trimmed :
+        row_checker =  False
+    else:
+        row_checker = True
+        
+    col_list = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    for i in range(0,15):
+        for widget in window.grid_slaves(i,col):
+            if isinstance(widget, tk.Label):
+                col_list[i] = 1
+    fixed_col_list = col_list.copy()
+    col_checker = True
+    
+    col_list_str = ''.join([str(x) for x in col_list]).strip('0')
+    col_list_trimmed = [int(x) for x in col_list_str]
+    if 0 in col_list_trimmed :
+        col_checker = False
+    else:
+        col_checker = True
+    if row_checker == True or col_checker == True:
+        return True
+    else:
+        return False
+    
+    
+    
