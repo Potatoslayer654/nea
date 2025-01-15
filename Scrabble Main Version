@@ -60,6 +60,22 @@ class ClassToStoreReturnedVariable:
 
 variable = ClassToStoreReturnedVariable()
 
+
+
+
+#def creating_the_word(row,col):
+    #current_locations = variable.getCurrent_location()
+    #check if there is a vertical word
+    #col_checker = True
+    #check above it
+    #while col_checker == True:
+        #for widget in window.grid_slaves(row-1,col):
+        #if isinstance(widget, tk.Label):
+
+
+
+    #check if there is a horizontal word  
+
 #This function will allow users be able to make Tiles green with the mouse 2 button to be able to swap them for other tiles
 def greening_grids(event):
     #get the attribute from the class storing green grids and the frozen variable as well
@@ -216,7 +232,7 @@ def drop(event):
     # Limit to a specific grid size (15x15)
     #check if the new position is not already taken by already being in grid_position
     #check if the initial position is a locked tile
-    if org_tuple not in locked_tiles and 0 <= new_row < 15 and 0 <= new_col < 15 and  new_tuple not in grid_locations :
+    if org_tuple not in locked_tiles and 0 <= new_row < 15 and 0 <= new_col < 15 and  new_tuple not in grid_locations and colour == "white":
         
                 #set it to the new location in the grid 
                 widget.grid(row=new_row, column=new_col, sticky="nsew")
@@ -250,27 +266,8 @@ def drop(event):
                     grid_locations.remove(new_tuple)
                     #Add this location to current locations as it is a new location within the same turn 
                     current_locations.remove(new_tuple)
+                print(grid_locations)
                     
-
-                            
-
-
-    #check if the tile is being moved into the hand
-    #checking if the location is taken and sending it back if it is
-    #checks if the tile is not locked 
-    elif org_tuple not in locked_tiles and new_row == 15 and 3 <= new_col <=9 and new_tuple not in grid_locations:
-                #Place the tile into the new position (which would be the one of the grids which are part of the users hand)
-                widget.grid(row=new_row, column=new_col, sticky="nsew")
-                
-                #Add the New position into the grid_location list 
-                grid_locations.append(new_tuple)
-                
-                #Remove the old Position of the tile from grid_location list as it is not longer in that position 
-                grid_locations.remove(org_tuple)
-                
-                #check if the old position was a current tile and remove it if it was 
-                if (org_tuple) in current_locations:
-                            current_locations.remove(org_tuple)
     #send back to the original position if any requirment is not met
     else:
         widget.grid(row=widget.original_row, column=widget.original_column, sticky="nsew")
@@ -279,8 +276,10 @@ def drop(event):
     variable.setGrid_location(grid_locations)
     variable.setCurrent_location(current_locations)
 
-
-def end_turn(): 
+#This function will end the users turn by locking the tiles placed , re-filling the users hand and freezing the user so they cant do any moves
+def end_turn():
+    #Call the Attribures Grid_Locations
+    grid_locations = variable.getGrid_location() 
     #check the location of each tile within grid_locaitons
     for i in grid_locations:
         
@@ -417,6 +416,71 @@ def swap():
     variable.setTilebag(local_tile_bag)
     variable.setTilebagamount(local_tile_bag_amount)
 
+def recall():
+    #Call the Attribures current_Locations
+    current_locations = variable.getCurrent_location()
+    grid_locations = variable.getGrid_location()
+    frozen = variable.getFrozen()
+    fixed_current_locations = current_locations.copy()
+    if frozen == False:
+        for x in fixed_current_locations:
+            current_row = x[0]
+            current_col = x[1]
+            for widget in window.grid_slaves(current_row,current_col):
+                if isinstance(widget, tk.Label):
+                    for i in range(3,10):
+                        empty_grid = (15,i)
+                        new_col = i
+                        if empty_grid not in grid_locations:
+                            widget.grid(row=15, column=i, sticky="nsew")
+                            print(grid_locations)
+                            grid_locations.append((15,i))
+                            print(grid_locations)
+                            grid_locations.remove((current_row,current_col))
+                            current_locations.remove((current_row,current_col))
+                            break
+                    
+                
+    
+
+    current_locations = []
+    variable.setCurrent_location(current_locations)
+
+def shuffle():
+    grid_locations = variable.getGrid_location()
+    green_grids = variable.getGreen_grids()
+
+    hand_locations = [x for x in grid_locations if x[0] == 15]
+    if len(hand_locations) == 7  and len(green_grids) == 0:
+
+        shuffle_hand_locations = hand_locations.copy()
+        random.shuffle(shuffle_hand_locations)
+
+        for i in range(3,10):
+            for widget in window.grid_slaves(15,i):
+                if isinstance(widget, tk.Label):
+                    shuffle_pos = shuffle_hand_locations[i-3]
+                    print(shuffle_pos[1])
+                    widget.grid(row=15, column=shuffle_pos[1], sticky="nsew")
+                    break
+    else:
+        print("All tiles must be on your hand and unselected")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                 
 
@@ -483,6 +547,14 @@ play_button.grid(row=15 , column=14 , sticky="nsew")
 freeze_button = ttk.Button(window , text="unfreeze",command = unfreeze)
 freeze_button.place(width=CELL_SIZE, height=CELL_SIZE)
 freeze_button.grid(row=15 , column=13 , sticky="nsew")
+
+recall_button = ttk.Button(window , text="recall",command = recall)
+recall_button.place(width=CELL_SIZE, height=CELL_SIZE)
+recall_button.grid(row=15 , column=12 , sticky="nsew")
+
+shuffle_button = ttk.Button(window , text="shuffle",command = shuffle)
+shuffle_button.place(width=CELL_SIZE, height=CELL_SIZE)
+shuffle_button.grid(row=15 , column=2 , sticky="nsew")
 
 
 #create the labels for the users hand 
