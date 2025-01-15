@@ -193,11 +193,15 @@ def drag_motion(event):
 
 
 def drop(event):
-    #Call the Attribures Grid_Locations and Current_Locations
+    #Call the Attribures Grid_Locations and Current_Locations and frozen
     grid_locations = variable.getGrid_location()
     current_locations = variable.getCurrent_location()
+    frozen = variable.getFrozen()
 
     widget = event.widget
+    
+    #get the colour of the tile
+    colour = widget.cget("background")
     
     #calculate the new row and new col of the Tile based on the the position of it in the screen 
     new_row = (widget.winfo_y() + CELL_SIZE // 2) // CELL_SIZE
@@ -213,66 +217,97 @@ def drop(event):
     #check if the new position is not already taken by already being in grid_position
     #check if the initial position is a locked tile
     if org_tuple not in locked_tiles and 0 <= new_row < 15 and 0 <= new_col < 15 and  new_tuple not in grid_locations :
-                #set it to the new grid
+        
+                #set it to the new location in the grid 
                 widget.grid(row=new_row, column=new_col, sticky="nsew")
+                
                 #add the new tile to the grid_location list
                 grid_locations.append(new_tuple)
+                
                 #remove the old tile from the grid_location list
                 grid_locations.remove(org_tuple)
+                
                 #remove the location of the tile previous to this move in the list
                 if (org_tuple) in current_locations:
                     current_locations.remove(org_tuple)
+                    
                 #add the location of the new tile into current_locations
                 current_locations.append((new_row,new_col))
                 
+                #Store the result of checking around the tile to see if the move is legal
+                result = check_around_tile(new_row,new_col)
                 
-                print(current_locations)
                 #Check if the starting tile has been placed and prevent any tiles being placed until it has been placed
                 #it also will check if the the game should be frozen
-                frozen = variable.getFrozen()
-                result = check_around_tile(new_row,new_col)
+                #Also check if the tile is legal by calling the check around function
                 if (7,7) not in grid_locations or frozen == True or result == False:
-                    grid_locations.append(org_tuple)
-                    grid_locations.remove(new_tuple)
+                    #As the move is illegal the tile will be send back to its original postion
                     widget.grid(row=widget.original_row, column=widget.original_column, sticky="nsew")
+                    
+                    #Add the Original Position back into the grid_location list as the tile goes back to that position
+                    grid_locations.append(org_tuple)
+                    #Remove the New position in the grid_location list as it has gone back to its original poistion 
+                    grid_locations.remove(new_tuple)
+                    #Add this location to current locations as it is a new location within the same turn 
                     current_locations.remove(new_tuple)
-                    print(current_locations)
-                print(grid_locations)
+                    
 
                             
 
 
     #check if the tile is being moved into the hand
-    #checking if the location is taken and sending it back if it is 
+    #checking if the location is taken and sending it back if it is
+    #checks if the tile is not locked 
     elif org_tuple not in locked_tiles and new_row == 15 and 3 <= new_col <=9 and new_tuple not in grid_locations:
+                #Place the tile into the new position (which would be the one of the grids which are part of the users hand)
                 widget.grid(row=new_row, column=new_col, sticky="nsew")
+                
+                #Add the New position into the grid_location list 
                 grid_locations.append(new_tuple)
-                org_tuple = (widget.original_row,widget.original_column)
+                
+                #Remove the old Position of the tile from grid_location list as it is not longer in that position 
                 grid_locations.remove(org_tuple)
+                
+                #check if the old position was a current tile and remove it if it was 
                 if (org_tuple) in current_locations:
                             current_locations.remove(org_tuple)
-    #send back if any requirment is not met
+    #send back to the original position if any requirment is not met
     else:
         widget.grid(row=widget.original_row, column=widget.original_column, sticky="nsew")
+        
+    #Set the the new grid_location and current_location 
     variable.setGrid_location(grid_locations)
     variable.setCurrent_location(current_locations)
 
 
-def end_turn():
-    grid_locations = variable.getGrid_location()
+def end_turn(): 
+    #check the location of each tile within grid_locaitons
     for i in grid_locations:
+        
+        #Check if that tile is not part of the users hand (any tile in row 15)
+        #check if it is not already in the board_tile_location
         if i[0] != 15 and i not in board_tile_location:
+            
+            #add this postion to the variable board_tile_location
             board_tile_location.append(i)
-
+            
+    #look at each location in board_tile_location
     for i in board_tile_location:
+        
+        #if its not already in locked tiles add that postion into locked_tiles
         if i not in locked_tiles:
             locked_tiles.append(i)
+            
+    #The turn has ended so the user should be frozen so set the attribure frozen to True
     x = True
-    variable.setFrozen (x)
-    check_hand()
-    variable.setGrid_location(grid_locations)
+    variable.setFrozen(x)
+    
+    #the turn has ended so current_location should be reset
     current_locations = []
     variable.setCurrent_location(current_locations)
+    
+    #call the check_hand() function to be able to re fill the users hand 
+    check_hand()
 
 
 
