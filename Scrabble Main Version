@@ -87,7 +87,7 @@ def greening_grids(event):
 
 def bleaching_grids(event):
     green_grids = variable.getGreen_grids()
-    widget = event.widget#]
+    widget = event.widget
     frozen = variable.getFrozen()
     row = widget.grid_info()['row']
     col = widget.grid_info()['column']
@@ -98,7 +98,7 @@ def bleaching_grids(event):
     variable.setGreen_grids(green_grids)
     
 
-def check_around_Tile(row,col):
+def check_around_tile(row,col):
     grid_locations = variable.getGrid_location()
     current_locations = variable.getCurrent_location()
     
@@ -107,151 +107,32 @@ def check_around_Tile(row,col):
         if i[0] != row and i[1] != col:
             if len(current_locations) >1:
                 return False
-    #check if its the first turn and allow the first tile to be placed whithout checking around it 
     board_locations = [x for x in grid_locations if x[0] != 15]
     if len(board_locations) == 1:
         return True
-    total = 0
-        
-        
-
-
     checker = False
-
-    #check each grid in a row and store all tiles as a one in the array row_list
-    row_list = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    for i in range(0,15):
-        for widget in window.grid_slaves(i,col):
+    #check below it
+    if row != 0:
+        for widget in window.grid_slaves(row-1,col):
             if isinstance(widget, tk.Label):
-                row_list[i] = 1
-                if (i,col) in locked_tiles:
-                    row_list[i] = 2
-    #make the starting tile act as a locked tile to allow the move to be legal
-    if col == 7 :
-        row_list[7] = 2
-    for i in range(0,15):
-        if row_list[i] == 2 :
-            if i < 14 and row_list[i+1] == 0 : 
-                if i > 0 and row_list[i-1] == 0:
-                    row_list[i] = 0
-            if i == 14 and row_list[i-1] == 0 :
-                row_list[i] = 0
-            if i == 0 and row_list[i+1] == 0 :
-                row_list[i] = 0 
-                    
-    #check placed tile and check if they are next to a locked tile on on the rows 
-    for i in current_locations:
-        current_row = i[0]
-        if i[0] < 14 and row_list[current_row + 1] == 2:
-            row_list[current_row] = 2
-        if i[0] > 0 and row_list[current_row -1] ==2:
-            row_list[current_row] = 2
-        if i[0] == 14 and row_list[current_row -1] == 2:
-            row_list[current_row] =2
-        if i[0] == 0 and row_list[current_row + 1] == 2:
-            row_list[current_row] = 2
-            
-            
-
-        
-                    
-                                    
-                    
-    fixed_row_list = row_list.copy()
-    
-    
-    
-    
-    row_checker = True
-    #make row list a string and get rid of useless zeros
-    row_list_str = ''.join([str(x) for x in row_list]).strip('0')
-    row_list_trimmed = [int(x) for x in row_list_str]
-    #check if the row is a valid row or not
-
-    for i in locked_tiles:
-        #check if any locked tiles are in this row 
-        if i[0] == row:
-            locked_tile_row = True
-
-    if row_list_trimmed == []:
-        #checks if the row is empty
-        row_checker = False
-    elif 0 in row_list_trimmed  :
-        #checks if there is a 0 in between single tiles , example- 10001
-        row_checker =  False
-    elif len(row_list_trimmed) == 1 :
-        #checks if there is a tile on a row by itself , example - 1
-        row_checker = False
-    elif 2 not in row_list_trimmed:
-        #checks if at least one of the tiles are connected to a locked tile to be legal , example - 211 not 11
-        row_checker = False
-    else:
-        #if all conditions are met the move is Legal 
-        row_checker = True
-
-    print(row_list_trimmed)
-
-
-   
-    col_list = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    for i in range(0,15):
-        for widget in window.grid_slaves(row,i):
+                checker = True
+    #check above it 
+    if row != 14:
+        for widget in window.grid_slaves(row+1,col):
             if isinstance(widget, tk.Label):
-                col_list[i] = 1
-                if (row,i) in locked_tiles:
-                    col_list[i] = 2
-    if row == 7:
-        col_list[7] = 2
-    for i in range(0,15):
-        if col_list[i] == 2 :
-            if i < 14 and col_list[i+1] == 0  :
-                if i > 0 and col_list[i-1] == 0:
-                    col_list[i] = 0
-    #check placed tile and check if they are next to a locked tile on on the cols 
-    for i in current_locations:
-        current_col = i[1]
-        if i[1] < 14 and col_list[current_col + 1] == 2:
-            col_list[current_col] = 2
-        if i[1] > 0 and col_list[current_col -1] ==2:
-            col_list[current_col] = 2
-        if i[1] == 14 and col_list[current_col -1] == 2:
-            col_list[current_col] =2
-        if i[1] == 0 and col_list[current_col + 1] == 2:
-            col_list[current_col] = 2
+                checker = True
+    #check to the left of it 
+    if col != 0:
+        for widget in window.grid_slaves(row,col-1):
+            if isinstance(widget, tk.Label):
+                checker = True
+    #check to the right of it 
+    if col != 14:
+        for widget in window.grid_slaves(row,col+1):
+            if isinstance(widget, tk.Label):
+                checker = True
 
-    
-    fixed_col_list = col_list.copy()
-    col_checker = True
-    
-    col_list_str = ''.join([str(x) for x in col_list]).strip('0')
-    col_list_trimmed = [int(x) for x in col_list_str]
-    print(col_list_trimmed)
-
-    for i in locked_tiles:
-        if i[1] == col:
-            locked_tile_col = True
-
-    if col_list_trimmed == []:
-        col_checker = False
-    elif 0 in col_list_trimmed:
-        col_checker = False
-    elif len(col_list_trimmed) == 1:
-        col_checker = False
-    elif 2 not in col_list_trimmed  :
-        #checks if at least one of the tiles are connected to a locked tile to be legal , example - 211 not 11
-        col_checker = False
-    else:
-        col_checker = True
- 
-
-
-
-
-
-    if row_checker == True or col_checker == True:
-        return True
-    else:
-        return False
+    return checker
     
 
 
@@ -289,9 +170,8 @@ def drag_motion(event):
 
 
 def drop(event):
-    current_locations = variable.getCurrent_location()
     grid_locations = variable.getGrid_location()
-
+    current_locations = variable.getCurrent_location()
 
     widget = event.widget
     new_row = (widget.winfo_y() + CELL_SIZE // 2) // CELL_SIZE
@@ -308,25 +188,22 @@ def drop(event):
                 #add the new tile to the grid_location list
                 grid_locations.append(new_tuple)
                 #remove the location of the tile previous to this move in the list
-                grid_locations.remove(org_tuple)
+                if (org_tuple) in current_locations:
+                    current_locations.remove(org_tuple)
+                #add the location of the new tile into current_locations
+                current_locations.append((new_row,new_col))
+                print(current_locations)
                 #Check if the starting tile has been placed and prevent any tiles being placed until it has been placed
                 #it also will check if the the game should be frozen
                 frozen = variable.getFrozen()
-                if (7,7) not in grid_locations or frozen == True :
+                result = check_around_tile(new_row,new_col)
+                if (7,7) not in grid_locations or frozen == True or result == False:
                     grid_locations.append(org_tuple)
                     grid_locations.remove(new_tuple)
                     widget.grid(row=widget.original_row, column=widget.original_column, sticky="nsew")
+                    current_locations.remove(new_tuple)
 
-                if frozen == False :
-                    if (7,7) in grid_locations:
-                        #check if a current tile is being moved from one location on the board to another and remove the old location from the board
-                        if (org_tuple) in current_locations:
-                            current_locations.remove(org_tuple)
-                        #store the placed tile in the current_tile array 
-                        current_locations.append((new_row,new_col))
-                        print(current_locations)
-                        Tile_checker = check_around_Tile(new_row,new_col)
-                        invalid_play_checker(Tile_checker)
+                            
 
 
     #check if the tile is being moved into the hand
@@ -338,10 +215,11 @@ def drop(event):
                 grid_locations.remove(org_tuple)
                 if (org_tuple) in current_locations:
                             current_locations.remove(org_tuple)
-
     #send back if any requirment is not met
     else:
         widget.grid(row=widget.original_row, column=widget.original_column, sticky="nsew")
+        current_locations.remove(new_tuple)
+    print(current_locations)
     variable.setGrid_location(grid_locations)
     variable.setCurrent_location(current_locations)
 
@@ -361,6 +239,7 @@ def end_turn(x):
     variable.setGrid_location(grid_locations)
     current_locations = []
     variable.setCurrent_location(current_locations)
+
 
 
 
