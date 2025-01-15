@@ -32,6 +32,7 @@ class ClassToStoreReturnedVariable:
         self.green_grids = []
         self.banned_tiles = []
         self.grid_locations =[]
+        self.current_locations = []
     def setFrozen (self, x):
         self.frozen = x
     def getFrozen (self):
@@ -56,6 +57,10 @@ class ClassToStoreReturnedVariable:
         self.grid_locations = x
     def getGrid_location(self):
         return self.grid_locations
+    def setCurrent_location(self,x):
+        self.current_locations = x
+    def getCurrent_location(self):
+        return self.current_locations
 
 
 
@@ -95,11 +100,20 @@ def bleaching_grids(event):
 
 def check_around_Tile(row,col):
     grid_locations = variable.getGrid_location()
+    current_locations = variable.getCurrent_location()
+    
+    #check if all the current tiles are in one row or col
+    for i in current_locations:
+        if i[0] != row and i[1] != col:
+            if len(current_locations) >1:
+                return False
     #check if its the first turn and allow the first tile to be placed whithout checking around it 
     board_locations = [x for x in grid_locations if x[0] != 15]
     if len(board_locations) == 1:
         return True
     total = 0
+        
+        
 
 
     checker = False
@@ -112,13 +126,42 @@ def check_around_Tile(row,col):
                 row_list[i] = 1
                 if (i,col) in locked_tiles:
                     row_list[i] = 2
+    #make the starting tile act as a locked tile to allow the move to be legal
+    if col == 7 :
+        row_list[7] = 2
     for i in range(0,15):
         if row_list[i] == 2 :
-            if i < 14 and row_list[i+1] != 1 :
-                row_list[i] = 0 
-                if i > 0 and row_list[i-1] != 1:
+            if i < 14 and row_list[i+1] == 0 : 
+                if i > 0 and row_list[i-1] == 0:
                     row_list[i] = 0
+            if i == 14 and row_list[i-1] == 0 :
+                row_list[i] = 0
+            if i == 0 and row_list[i+1] == 0 :
+                row_list[i] = 0 
+                    
+    #check placed tile and check if they are next to a locked tile on on the rows 
+    for i in current_locations:
+        current_row = i[0]
+        if i[0] < 14 and row_list[current_row + 1] == 2:
+            row_list[current_row] = 2
+        if i[0] > 0 and row_list[current_row -1] ==2:
+            row_list[current_row] = 2
+        if i[0] == 14 and row_list[current_row -1] == 2:
+            row_list[current_row] =2
+        if i[0] == 0 and row_list[current_row + 1] == 2:
+            row_list[current_row] = 2
+            
+            
+
+        
+                    
+                                    
+                    
     fixed_row_list = row_list.copy()
+    
+    
+    
+    
     row_checker = True
     #make row list a string and get rid of useless zeros
     row_list_str = ''.join([str(x) for x in row_list]).strip('0')
@@ -139,14 +182,13 @@ def check_around_Tile(row,col):
     elif len(row_list_trimmed) == 1 :
         #checks if there is a tile on a row by itself , example - 1
         row_checker = False
+    elif 2 not in row_list_trimmed:
+        #checks if at least one of the tiles are connected to a locked tile to be legal , example - 211 not 11
+        row_checker = False
     else:
         #if all conditions are met the move is Legal 
         row_checker = True
-    #checks if a row with 1's and 0's is legal ,example - 1011011
-    #for i in range(0,(len(row_list_trimmed)-1)):
-        #if row_list_trimmed[i] ==  1 and i < len(row_list_trimmed):
-           # if row_list_trimmed[i+1] == 1:
-              #  row_checker = True
+
     print(row_list_trimmed)
 
 
@@ -158,12 +200,26 @@ def check_around_Tile(row,col):
                 col_list[i] = 1
                 if (row,i) in locked_tiles:
                     col_list[i] = 2
+    if row == 7:
+        col_list[7] = 2
     for i in range(0,15):
         if col_list[i] == 2 :
-            if i < 14 and col_list[i+1] != 1 :
-                col_list[i] = 0 
-                if i > 0 and col_list[i-1] != 1:
+            if i < 14 and col_list[i+1] == 0  :
+                if i > 0 and col_list[i-1] == 0:
                     col_list[i] = 0
+    #check placed tile and check if they are next to a locked tile on on the cols 
+    for i in current_locations:
+        current_col = i[1]
+        if i[1] < 14 and col_list[current_col + 1] == 2:
+            col_list[current_col] = 2
+        if i[1] > 0 and col_list[current_col -1] ==2:
+            col_list[current_col] = 2
+        if i[1] == 14 and col_list[current_col -1] == 2:
+            col_list[current_col] =2
+        if i[1] == 0 and col_list[current_col + 1] == 2:
+            col_list[current_col] = 2
+
+    
     fixed_col_list = col_list.copy()
     col_checker = True
     
@@ -180,6 +236,9 @@ def check_around_Tile(row,col):
     elif 0 in col_list_trimmed:
         col_checker = False
     elif len(col_list_trimmed) == 1:
+        col_checker = False
+    elif 2 not in col_list_trimmed  :
+        #checks if at least one of the tiles are connected to a locked tile to be legal , example - 211 not 11
         col_checker = False
     else:
         col_checker = True
@@ -230,6 +289,7 @@ def drag_motion(event):
 
 
 def drop(event):
+    current_locations = variable.getCurrent_location()
     grid_locations = variable.getGrid_location()
 
 
@@ -259,6 +319,12 @@ def drop(event):
 
                 if frozen == False :
                     if (7,7) in grid_locations:
+                        #check if a current tile is being moved from one location on the board to another and remove the old location from the board
+                        if (org_tuple) in current_locations:
+                            current_locations.remove(org_tuple)
+                        #store the placed tile in the current_tile array 
+                        current_locations.append((new_row,new_col))
+                        print(current_locations)
                         Tile_checker = check_around_Tile(new_row,new_col)
                         invalid_play_checker(Tile_checker)
 
@@ -270,11 +336,14 @@ def drop(event):
                 grid_locations.append(new_tuple)
                 org_tuple = (widget.original_row,widget.original_column)
                 grid_locations.remove(org_tuple)
+                if (org_tuple) in current_locations:
+                            current_locations.remove(org_tuple)
 
     #send back if any requirment is not met
     else:
         widget.grid(row=widget.original_row, column=widget.original_column, sticky="nsew")
     variable.setGrid_location(grid_locations)
+    variable.setCurrent_location(current_locations)
 
 
 def end_turn(x):
@@ -290,6 +359,8 @@ def end_turn(x):
     variable.setFrozen (x)
     check_hand()
     variable.setGrid_location(grid_locations)
+    current_locations = []
+    variable.setCurrent_location(current_locations)
 
 
 
