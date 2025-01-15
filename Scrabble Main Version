@@ -6,18 +6,10 @@ colour_list = []
 colours = ["#F9E4BC", '#895129'] # colours for the board
 locked_tiles = [] # tiles what cannot move 
 board_tile_location = [] # location of all tiles on the 15x15 board
-colours_hand = ["#1E90FF","#6495ED","#4863A0","#79BAEC",'#95B9C7', '#36454F'] # colours for the hand labels 
-tile_bag = (
-    ["A"] * 9 + ["B"] * 2 + ["C"] * 2 + ["D"] * 4 + ["E"] * 12 +
-    ["F"] * 2 + ["G"] * 3 + ["H"] * 2 + ["I"] * 9 + ["J"] * 1 +
-    ["K"] * 1 + ["L"] * 4 + ["M"] * 2 + ["N"] * 6 + ["O"] * 8 +
-    ["P"] * 2 + ["Q"] * 1 + ["R"] * 6 + ["S"] * 4 + ["T"] * 6 +
-    ["U"] * 4 + ["V"] * 2 + ["W"] * 2 + ["X"] * 1 + ["Y"] * 2 + ["Z"] * 1 + ["blank"] * 2) 
-
-tile_bag_amount = len(tile_bag)
+colours_hand = ["#1E90FF","#6495ED","#4863A0","#79BAEC",'#95B9C7', '#36454F'] # colours for the hand labels
 score = {letter: score for letter, score in zip(
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ", [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10])}
-frozen = False # Decide if its the users turn or not
+
 
 class ClassToStoreReturnedVariable:
     def __init__ (self):
@@ -68,37 +60,71 @@ class ClassToStoreReturnedVariable:
 
 variable = ClassToStoreReturnedVariable()
 
-
-
+#This function will allow users be able to make Tiles green with the mouse 2 button to be able to swap them for other tiles
 def greening_grids(event):
+    #get the attribute from the class storing green grids and the frozen variable as well
     green_grids = variable.getGreen_grids()
+    frozen = variable.getFrozen()
+    
+    #set the current tile equal to widget 
     widget = event.widget
+    
+    #get the row and col info of the tile which wants to be highlighted green
     row = widget.grid_info()['row']
     col = widget.grid_info()['column']
+    
+    #make it into a tuple
     tup = (row,col)
+    
+    #get the colour of the tile
     colour = widget.cget("background")
-    frozen = variable.getFrozen()
+    
+    #check if the tiles are on the are in the users hand ( row 15 ) , the tile is not already highlighted
+    #and also check if the game is not frozen to be able to change the colour of the tile to green
     if row == 15 and colour != "green" and frozen == False:
-        widget.config(background = "green") 
+        
+        #set the colour of the Tile to green
+        widget.config(background = "green")
+        
+        #add the position of this green tile to the green_grid list
         green_grids.append((tup))
+        
+    #set the attribute Green_grids as the green_grids list 
     variable.setGreen_grids(green_grids)
-    print(green_grids)
 
 
+#This function will allow the user to be able to turn a green Tile back into a white one with the mouse 3 button(Scroll wheel button)
 def bleaching_grids(event):
+    #get the attribute from the class called green_grids and also get the frozen attribute
     green_grids = variable.getGreen_grids()
-    widget = event.widget
     frozen = variable.getFrozen()
+    
+    #set the the current tile equal to widget 
+    widget = event.widget
+    
+    #Get the row and col info of the Tile 
     row = widget.grid_info()['row']
     col = widget.grid_info()['column']
+    
+    #Make a Tuple of the row and col
     tup = (row,col)
+    
+    #Check if the Tile is in the users hand , check if the tile is already green
+    #and check if the game is not frozen 
     if row == 15 and tup in green_grids and frozen == False:
-        widget.config(background = "white") 
+        
+        #Set the colour of the tile back to white 
+        widget.config(background = "white")
+        
+        #Remove that the tile from the green_grids list as it is no longer green
         green_grids.remove((tup))
+    
+    #Set the attribute of green_grids to the list 
     variable.setGreen_grids(green_grids)
     
-
+#This function will check around The tile placed and if that move is legal 
 def check_around_tile(row,col):
+    #Get the attributes for both grid_locations and current_locations
     grid_locations = variable.getGrid_location()
     current_locations = variable.getCurrent_location()
     
@@ -107,9 +133,13 @@ def check_around_tile(row,col):
         if i[0] != row and i[1] != col:
             if len(current_locations) >1:
                 return False
+    #Will only store the positions in grid_locations which are part of the board and not the hand 
     board_locations = [x for x in grid_locations if x[0] != 15]
+    
+    #Will not check around the tile if its the first move 
     if len(board_locations) == 1:
         return True
+    #Set at false as if no condition is met it means there are no tiles around it
     checker = False
     #check below it
     if row != 0:
@@ -131,67 +161,71 @@ def check_around_tile(row,col):
         for widget in window.grid_slaves(row,col+1):
             if isinstance(widget, tk.Label):
                 checker = True
-
+    #sends back if the move is legal or not 
     return checker
     
 
 
-
-def invalid_play_checker(checker):
-    if checker == False:
-        play_button.config(bg = "red")
-        play_button.config(command = invalid_input)
-    else:
-        play_button.config(bg = "white")
-        play_button.config(command = lambda x = variable.getFrozen : end_turn(x))
-
-
-
-def invalid_input():
-    print("invalid play")
-
-
-
+#This function will store and calculate the inital x,y and row,col values of the Tile being moved
 def drag_start(event):
     widget = event.widget
+    
+    #Stores the initial x and y coords of the tile 
     widget.startX = event.x
     widget.startY = event.y
+    
+    #Stores the initial row and col of the tile 
     widget.original_row = widget.grid_info()['row']
     widget.original_column = widget.grid_info()['column']
 
 
-
+#This will keep the Tile stuck to the mouse while the mouse 1 button is being held
 def drag_motion(event):
     widget = event.widget
+    
+    #Calculates the current position of the Tile in terms of (x,y) 
     x = widget.winfo_x() - widget.startX + event.x
     y = widget.winfo_y() - widget.startY + event.y
+    
+    #This will keep the widget to change and stay with the Pointer on screen
     widget.place(width=CELL_SIZE, height=CELL_SIZE,x=x, y=y)
 
 
 
 def drop(event):
+    #Call the Attribures Grid_Locations and Current_Locations
     grid_locations = variable.getGrid_location()
     current_locations = variable.getCurrent_location()
 
     widget = event.widget
+    
+    #calculate the new row and new col of the Tile based on the the position of it in the screen 
     new_row = (widget.winfo_y() + CELL_SIZE // 2) // CELL_SIZE
     new_col = (widget.winfo_x() + CELL_SIZE // 2) // CELL_SIZE
-
+    
+    #Create a tuple storing the new postition of the Tile 
     new_tuple=(new_row,new_col)
+    
+    #Create a tuple storing the old position of the tile 
     org_tuple = (widget.original_row,widget.original_column)
+    
     # Limit to a specific grid size (15x15)
-    #checking if the location is taken and sending it back if it is
+    #check if the new position is not already taken by already being in grid_position
     #check if the initial position is a locked tile
     if org_tuple not in locked_tiles and 0 <= new_row < 15 and 0 <= new_col < 15 and  new_tuple not in grid_locations :
                 #set it to the new grid
                 widget.grid(row=new_row, column=new_col, sticky="nsew")
                 #add the new tile to the grid_location list
                 grid_locations.append(new_tuple)
+                #remove the old tile from the grid_location list
+                grid_locations.remove(org_tuple)
                 #remove the location of the tile previous to this move in the list
                 if (org_tuple) in current_locations:
                     current_locations.remove(org_tuple)
                 #add the location of the new tile into current_locations
                 current_locations.append((new_row,new_col))
+                
+                
                 print(current_locations)
                 #Check if the starting tile has been placed and prevent any tiles being placed until it has been placed
                 #it also will check if the the game should be frozen
@@ -202,6 +236,8 @@ def drop(event):
                     grid_locations.remove(new_tuple)
                     widget.grid(row=widget.original_row, column=widget.original_column, sticky="nsew")
                     current_locations.remove(new_tuple)
+                    print(current_locations)
+                print(grid_locations)
 
                             
 
@@ -218,13 +254,11 @@ def drop(event):
     #send back if any requirment is not met
     else:
         widget.grid(row=widget.original_row, column=widget.original_column, sticky="nsew")
-        current_locations.remove(new_tuple)
-    print(current_locations)
     variable.setGrid_location(grid_locations)
     variable.setCurrent_location(current_locations)
 
 
-def end_turn(x):
+def end_turn():
     grid_locations = variable.getGrid_location()
     for i in grid_locations:
         if i[0] != 15 and i not in board_tile_location:
@@ -406,7 +440,7 @@ skip_button.grid(row=15 , column=1 , sticky="nsew")
 
                       
 #this button will call the end_turn function
-play_button = tk.Button(window , text="Finish",bg='white',command = lambda x = variable.getFrozen : end_turn(x))
+play_button = tk.Button(window , text="Finish",bg='white',command = end_turn)
 play_button.place(width=CELL_SIZE, height=CELL_SIZE)
 play_button.grid(row=15 , column=14 , sticky="nsew")
 
