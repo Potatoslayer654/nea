@@ -63,15 +63,62 @@ variable = ClassToStoreReturnedVariable()
 
 
 
-#def creating_the_word(row,col):
-    #current_locations = variable.getCurrent_location()
-    #check if there is a vertical word
-    #col_checker = True
-    #check above it
-    #while col_checker == True:
-        #for widget in window.grid_slaves(row-1,col):
-        #if isinstance(widget, tk.Label):
+def creating_the_word(row,col):
 
+    current_locations = variable.getCurrent_location()
+    #check the letter of the current tile 
+
+    up_word = [] 
+    side_word=[]  
+    widget = next((w for w in window.grid_slaves(row, col)), None)
+    letter = widget.cget("text")
+    up_word.append(letter)
+    side_word.append(letter)
+
+    #check if there is a vertical word
+    #check above the tile to see how much tiles are above it
+    counter = 1
+    while True:
+        widget = next((w for w in window.grid_slaves(row-counter, col)), None)
+        if isinstance(widget, tk.Label):
+            letter = widget.cget("text")
+            up_word.insert(0,letter)
+            
+            counter = counter + 1  
+        else:
+            break
+    #check if there is letters bellow it
+    counter = 1
+    while True:
+        widget = next((w for w in window.grid_slaves(row+counter, col)), None)
+        if isinstance(widget, tk.Label):
+            letter = widget.cget("text")
+            up_word.append(letter)
+            counter = counter + 1  
+        else:
+            break
+
+    print(up_word)
+    counter = 1
+
+    while True:
+        widget = next((w for w in window.grid_slaves(row, col-counter)), None)
+        if isinstance(widget, tk.Label):
+            letter = widget.cget("text")
+            side_word.insert(0,letter)
+            counter = counter + 1
+        else:
+            break
+    counter = 1
+    while True:
+        widget = next((w for w in window.grid_slaves(row, col+counter)), None)
+        if isinstance(widget, tk.Label):
+            letter = widget.cget("text")
+            side_word.append(letter)
+            counter = counter + 1
+        else:
+            break
+    print(side_word)
 
 
     #check if there is a horizontal word  
@@ -252,6 +299,8 @@ def drop(event):
                 
                 #Store the result of checking around the tile to see if the move is legal
                 result = check_around_tile(new_row,new_col)
+
+                creating_the_word(new_row,new_col)
                 
                 #Check if the starting tile has been placed and prevent any tiles being placed until it has been placed
                 #it also will check if the the game should be frozen
