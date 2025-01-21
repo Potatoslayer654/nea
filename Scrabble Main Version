@@ -25,6 +25,8 @@ class ClassToStoreReturnedVariable:
         self.banned_tiles = []
         self.grid_locations =[]
         self.current_locations = []
+        self.side_words = []
+        self.up_words = []
     def setFrozen (self, x):
         self.frozen = x
     def getFrozen (self):
@@ -53,6 +55,15 @@ class ClassToStoreReturnedVariable:
         self.current_locations = x
     def getCurrent_location(self):
         return self.current_locations
+    def setUp_words(self,x):
+        self.up_words = x
+    def getUp_words(self):
+        return self.up_words
+    def setSide_words(self,x):
+        self.side_words = x
+    def getSide_words(self):
+        return self.side_words
+
 
 
 
@@ -66,6 +77,8 @@ variable = ClassToStoreReturnedVariable()
 def creating_the_word(row,col):
 
     current_locations = variable.getCurrent_location()
+    side_words = variable.getSide_words()
+    up_words = variable.getUp_words()
     #check the letter of the current tile 
 
     up_word = [] 
@@ -98,7 +111,6 @@ def creating_the_word(row,col):
         else:
             break
 
-    print(up_word)
     counter = 1
 
     while True:
@@ -118,9 +130,26 @@ def creating_the_word(row,col):
             counter = counter + 1
         else:
             break
-    print(side_word)
-
-
+    #checks if the tiles placed are only horizontal or vertical
+    checker_tile = current_locations[0]
+    horizontal_word = False
+    vertical_word = False
+    if checker_tile[0] == row :
+        vertical_word = True
+    else:
+        horizontal_word = True
+        
+    if horizontal_word  == True:
+        up_words = up_word
+        side_words.append(side_word)
+    if vertical_word:
+        side_words = side_word
+        up_words.append(up_word)
+    print(side_words)
+    print(up_words)
+    
+    variable.setUp_words(up_words)
+    variable.setSide_words(side_words)
     #check if there is a horizontal word  
 
 #This function will allow users be able to make Tiles green with the mouse 2 button to be able to swap them for other tiles
@@ -300,7 +329,6 @@ def drop(event):
                 #Store the result of checking around the tile to see if the move is legal
                 result = check_around_tile(new_row,new_col)
 
-                creating_the_word(new_row,new_col)
                 
                 #Check if the starting tile has been placed and prevent any tiles being placed until it has been placed
                 #it also will check if the the game should be frozen
@@ -315,7 +343,9 @@ def drop(event):
                     grid_locations.remove(new_tuple)
                     #Add this location to current locations as it is a new location within the same turn 
                     current_locations.remove(new_tuple)
-                print(grid_locations)
+                else:
+                    creating_the_word(new_row,new_col)
+            
                     
     #send back to the original position if any requirment is not met
     else:
@@ -328,7 +358,9 @@ def drop(event):
 #This function will end the users turn by locking the tiles placed , re-filling the users hand and freezing the user so they cant do any moves
 def end_turn():
     #Call the Attribures Grid_Locations
-    grid_locations = variable.getGrid_location() 
+    grid_locations = variable.getGrid_location()
+    side_words = variable.getSide_words()
+    up_words = variable.getUp_words()
     #check the location of each tile within grid_locaitons
     for i in grid_locations:
         
@@ -351,9 +383,8 @@ def end_turn():
     variable.setFrozen(x)
     
     #the turn has ended so current_location should be reset
-    current_locations = []
-    variable.setCurrent_location(current_locations)
-    
+    empty = []
+    variable.setCurrent_location(empty)  
     #call the check_hand() function to be able to re fill the users hand 
     check_hand()
 
@@ -383,7 +414,6 @@ def create_tile(empty_grid):
     tile.grid(row =empty_grid[0],column=empty_grid[1], sticky="nsew",pady=5, padx=5)
     tile_tuple = (empty_grid)
     grid_locations.append(tile_tuple)
-    print(grid_locations)
 
     variable.setTilebagamount(local_tile_bag_amount)
     variable.setTilebag(local_tile_bag)
@@ -482,9 +512,9 @@ def recall():
                         new_col = i
                         if empty_grid not in grid_locations:
                             widget.grid(row=15, column=i, sticky="nsew")
-                            print(grid_locations)
+                
                             grid_locations.append((15,i))
-                            print(grid_locations)
+                        
                             grid_locations.remove((current_row,current_col))
                             current_locations.remove((current_row,current_col))
                             break
