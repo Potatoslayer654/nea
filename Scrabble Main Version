@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import random
+import requests
 CELL_SIZE = 50      # size of each grid cell in pixels
 colour_list = []    
 colours = ["#F9E4BC", '#895129'] # colours for the board
@@ -71,10 +72,23 @@ class ClassToStoreReturnedVariable:
 
 variable = ClassToStoreReturnedVariable()
 
+def word_checker(words):
+    checker = False
+    for i in words:
+        word = "".join(i)
+        word = word.lower()
+        response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}")
+        if response.status_code == 200:
+            checker = True
+        else:
+            checker = False
+            break
+    if checker == True:
+        print("all words are valid")
+    else:
+        print("a word in invalid")
 
-
-
-def creating_the_word(row,col):
+def creating_the_words(row,col):
 
     current_locations = variable.getCurrent_location()
     side_words = variable.getSide_words()
@@ -95,7 +109,10 @@ def creating_the_word(row,col):
         widget = next((w for w in window.grid_slaves(row-counter, col)), None)
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
-            up_word.insert(0,letter)
+            if len(up_word) == 0:
+                up_word.append(letter)
+            else:
+                up_word.insert(0,letter)
             
             counter = counter + 1  
         else:
@@ -107,9 +124,11 @@ def creating_the_word(row,col):
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
             up_word.append(letter)
-            counter = counter + 1  
+            print(letter)
         else:
             break
+
+        counter = counter + 1 
 
     counter = 1
 
@@ -117,7 +136,10 @@ def creating_the_word(row,col):
         widget = next((w for w in window.grid_slaves(row, col-counter)), None)
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
-            side_word.insert(0,letter)
+            if side_word == 0:
+                side_word.append(letter)
+            else:
+                side_word.insert(0,letter)
             counter = counter + 1
         else:
             break
@@ -145,12 +167,37 @@ def creating_the_word(row,col):
     if vertical_word:
         side_words = side_word
         up_words.append(up_word)
-    print(side_words)
-    print(up_words)
-    
+
+
     variable.setUp_words(up_words)
     variable.setSide_words(side_words)
     #check if there is a horizontal word  
+
+
+    current_words = []
+
+    if vertical_word == True:
+        for i in up_words:
+            current_words.append(i)
+        current_words.append(side_word)
+
+    if horizontal_word == True:
+        for i in side_words:
+            current_words.append(i)
+        current_words.append(up_words)
+
+    fixed_current_words = current_words.copy()
+    current_words = []   
+    for i in fixed_current_words:
+        if len(i) != 1 :
+            current_words.append(i)
+
+
+    print(f"{current_words} - current words")
+
+    return current_words
+
+
 
 #This function will allow users be able to make Tiles green with the mouse 2 button to be able to swap them for other tiles
 def greening_grids(event):
@@ -308,7 +355,7 @@ def drop(event):
     # Limit to a specific grid size (15x15)
     #check if the new position is not already taken by already being in grid_position
     #check if the initial position is a locked tile
-    if org_tuple not in locked_tiles and 0 <= new_row < 15 and 0 <= new_col < 15 and  new_tuple not in grid_locations and colour == "white":
+    if org_tuple not in locked_tiles and 0 <= new_row < 15 and 0 <= new_col < 15 and  new_tuple not in grid_locations and colour == "white" and org_tuple[0] == 15:
         
                 #set it to the new location in the grid 
                 widget.grid(row=new_row, column=new_col, sticky="nsew")
@@ -344,7 +391,8 @@ def drop(event):
                     #Add this location to current locations as it is a new location within the same turn 
                     current_locations.remove(new_tuple)
                 else:
-                    creating_the_word(new_row,new_col)
+                    current_words = creating_the_words(new_row,new_col)
+                    word_checker(current_words)
             
                     
     #send back to the original position if any requirment is not met
@@ -384,7 +432,15 @@ def end_turn():
     
     #the turn has ended so current_location should be reset
     empty = []
-    variable.setCurrent_location(empty)  
+    variable.setCurrent_location(empty)
+
+
+
+
+
+    x = [] 
+    variable.setUp_words(x)
+    variable.setSide_words(x) 
     #call the check_hand() function to be able to re fill the users hand 
     check_hand()
 
@@ -518,7 +574,9 @@ def recall():
                             grid_locations.remove((current_row,current_col))
                             current_locations.remove((current_row,current_col))
                             break
-                    
+    x = [] 
+    variable.setUp_words(x)
+    variable.setSide_words(x)
                 
     
 
