@@ -638,7 +638,10 @@ for i in range(16): # Set minimum size for columns
 for i in range(15):
     window.columnconfigure(i, weight=1, minsize=CELL_SIZE)   # Set minimum size for columns
 
-
+triple_words = [(0,0),(7,0),(14,0),(0,7),(14,7),(0,14),(7,14),(14,14)]
+double_words = [(1,1),(2,2),(3,3),(4,4),(1,13),(2,12),(3,11),(4,10),(13,1),(12,2),(11,3),(10,4),(13,13),(12,12),(11,11),(10,10)]
+triple_letters =[(1,5),(1,9),(5,1),(5,5),(5,9),(5,13),(9,1),(9,5),(9,9),(9,13),(13,5),(13,9)]
+double_letters = [(0, 3),(0, 11),(2, 6),(2, 8),(3, 0),(3, 7),(3, 14),(6, 2),(6, 6),(6, 8),(6, 12),(7, 3),(7, 11),(8, 2),(8, 6),(8, 8),(8, 12),(11, 0),(11, 7),(11, 14),(12, 6),(12, 8),(14, 3),  (14, 11)]
 #Create Background colour for the grid
 frame = tk.Frame(window, bg=random.choice(colours))
 frame.place(width=CELL_SIZE, height=CELL_SIZE) 
@@ -656,13 +659,29 @@ for i in range(15):
 
         colour_list.append(bg)
         frame = tk.Frame(window, bg=bg)
-
+        tup = (i,j)
         frame.place(width=CELL_SIZE, height=CELL_SIZE)
         if i == 7 and j == 7:
             frame = tk.Frame(window, bg="black")
             frame.grid(row=i, column=j, sticky="nsew")
+        elif tup in triple_words:
+            frame = tk.Frame(window, bg="#9b2948")
+            frame.grid(row=i, column=j, sticky="nsew")
+        elif tup in double_words:
+            frame = tk.Frame(window, bg="#ff7251")
+            frame.grid(row=i, column=j, sticky="nsew")
+        elif tup in triple_letters:
+            frame = tk.Frame(window, bg="#ffca7b")
+            frame.grid(row=i, column=j, sticky="nsew")
+        elif tup in double_letters:
+            frame = tk.Frame(window, bg="#ffedbf")
+            frame.grid(row=i, column=j, sticky="nsew")
         else:
             frame.grid(row=i, column=j, sticky="nsew")
+
+frame = tk.Frame(window, bg="red")
+frame.grid(row=0, column=0, sticky="nsew")         
+
 
 #create hand
 
