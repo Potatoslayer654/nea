@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import random
 import requests
+import copy
 CELL_SIZE = 50      # size of each grid cell in pixels
 colour_list = []    
 colours = ["#F9E4BC", '#895129'] # colours for the board
@@ -219,7 +220,7 @@ def creating_the_words(row,col):
             up_word.append(letter)
             result = check_multipliers(row+counter,col,letter)
             up_word_multiplied.append(result)
-            counter = counter + 1 
+            counter = counter + 1
 
         else:
             break
@@ -250,11 +251,15 @@ def creating_the_words(row,col):
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
             side_word.append(letter)
-            result = check_multipliers(row,col-counter,letter)
+            result = check_multipliers(row,col+counter,letter)
             side_word_multiplied.append(result)
             counter = counter + 1 
         else:
             break
+
+    print(f"{up_word_multiplied}-up word multipler_checker")
+    print(f"{side_word_multiplied}-side word mulit")
+
     #checks if the tiles placed are only horizontal or vertical
     checker_tile = current_locations[0]
     horizontal_word = False
@@ -264,26 +269,38 @@ def creating_the_words(row,col):
     else:
         horizontal_word = True
     #make the direction of the current tiles become stored as one word 
-    if horizontal_word  == True:
-        up_words = up_word
-        up_words_multiplied = up_word_multiplied
-        side_words.append(side_word)
-        side_words_multiplied.append(side_word_multiplied)
-    if vertical_word == True:
-        side_words = side_word
-        side_words_multiplied = side_word_multiplied
-        up_words.append(up_word)
-        up_words_multiplied.append(up_word_multiplied)
+    if horizontal_word == True:
+        up_words = copy.deepcopy(up_word)
+        side_words.append(copy.deepcopy(side_word))
+    else :
+        side_words = copy.deepcopy(side_word)
+        up_words.append(copy.deepcopy(up_word))
+
+    if horizontal_word == True:
+        variable.setUp_words_multiplied(up_word_multiplied)
+        side_words_multiplied.append(copy.deepcopy(side_word_multiplied))
+        variable.setSide_words_multiplied(side_words_multiplied)
+    else:
+        variable.setSide_words_multiplied(side_word_multiplied)
+        up_words_multiplied.append(copy.deepcopy(up_word_multiplied))
+        variable.setUp_words_multiplied(up_words_multiplied)
+
+
+
+    print(f"{up_word_multiplied}-up word multipler_checker")
+    print(f"{side_word_multiplied}-side word mulit")
+
+
 
 
     variable.setUp_words(up_words)
     variable.setSide_words(side_words)
-    variable.setUp_words_multiplied(up_words_multiplied)
-    variable.setUp_words_multiplied(side_words_multiplied)
 
 
+    #check if there is a horizontal word 
 
-    #check if there is a horizontal word  
+    side_words_multiplied = variable.getSide_words_multiplied()
+    up_words_multiplied = variable.getUp_words_multiplied() 
 
     #combine side and up words to show current words as one list
     current_words = []
@@ -291,7 +308,7 @@ def creating_the_words(row,col):
     if vertical_word == True:
         for i in up_words:
             current_words.append(i)
-        for i in up_words_multiplied:
+        for x in up_words_multiplied:
             current_words_multi.append(i)
         current_words.append(side_words)
         current_words_multi.append(side_words_multiplied)
@@ -299,20 +316,30 @@ def creating_the_words(row,col):
     if horizontal_word == True:
         for i in side_words:
             current_words.append(i)
-        for i in side_words_multiplied:
+        for x in side_words_multiplied:
             current_words_multi.append(i)
         current_words.append(up_words)
         current_words_multi.append(up_words_multiplied)
 
     current_words = [x for x in current_words if len(x) != 1]   
+
+    current_words_multi = [x for x in current_words_multi if len(x) != 1]
     
-    current_words_multi = [x for x in current_words_multi if len(x) != 1 ]
+    
 
 
 
 
+    print(f"{up_words} - uup words")
+    print(f"{up_words_multiplied}-up word multipler_checker")
+    print()
+    print(f"{side_words_multiplied}-side word mulit")
+    print(f"{side_words}-side words")
+    print()
     print(f"{current_words} - current words")
     print(f"{current_words_multi}-current words multi")
+    print()
+    print(f"{current_locations}")
     
     return current_words
 
@@ -560,6 +587,9 @@ def end_turn():
     x = [] 
     variable.setUp_words(x)
     variable.setSide_words(x) 
+    variable.setUp_words_multiplied(x)
+    variable.setSide_words_multiplied(x)
+
     #call the check_hand() function to be able to re fill the users hand 
     check_hand()
 
@@ -696,6 +726,8 @@ def recall():
     x = [] 
     variable.setUp_words(x)
     variable.setSide_words(x)
+    variable.setUp_words_multiplied(x)
+    variable.setSide_words_multiplied(x)
                 
     
 
