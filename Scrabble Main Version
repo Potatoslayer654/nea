@@ -171,14 +171,16 @@ def creating_the_words(row,col):
     current_locations = variable.getCurrent_location()
     side_words = variable.getSide_words()
     up_words = variable.getUp_words()
-    side_words_multiplied = variable.getSide_words_multiplied
-    up_words_multiplied = variable.getUp_words_multiplied
+    side_words_multiplied = variable.getSide_words_multiplied()
+    up_words_multiplied = variable.getUp_words_multiplied()
     #check the letter of the current tile 
 
     up_word = [] 
     side_word = [] 
     up_word_multiplied = []
     side_word_multiplied = [] 
+
+
     widget = next((w for w in window.grid_slaves(row, col)), None)
     letter = widget.cget("text")
     result = check_multipliers(row,col,letter)
@@ -261,42 +263,57 @@ def creating_the_words(row,col):
         vertical_word = True
     else:
         horizontal_word = True
-        
+    #make the direction of the current tiles become stored as one word 
     if horizontal_word  == True:
         up_words = up_word
+        up_words_multiplied = up_word_multiplied
         side_words.append(side_word)
-    if vertical_word:
+        side_words_multiplied.append(side_word_multiplied)
+    if vertical_word == True:
         side_words = side_word
+        side_words_multiplied = side_word_multiplied
         up_words.append(up_word)
+        up_words_multiplied.append(up_word_multiplied)
 
 
     variable.setUp_words(up_words)
     variable.setSide_words(side_words)
+    variable.setUp_words_multiplied(up_words_multiplied)
+    variable.setUp_words_multiplied(side_words_multiplied)
+
+
+
     #check if there is a horizontal word  
 
-
+    #combine side and up words to show current words as one list
     current_words = []
-
+    current_words_multi = []
     if vertical_word == True:
         for i in up_words:
             current_words.append(i)
-        current_words.append(side_word)
+        for i in up_words_multiplied:
+            current_words_multi.append(i)
+        current_words.append(side_words)
+        current_words_multi.append(side_words_multiplied)
 
     if horizontal_word == True:
         for i in side_words:
             current_words.append(i)
+        for i in side_words_multiplied:
+            current_words_multi.append(i)
         current_words.append(up_words)
+        current_words_multi.append(up_words_multiplied)
 
-    fixed_current_words = current_words.copy()
-    current_words = []   
-    for i in fixed_current_words:
-        if len(i) != 1 :
-            current_words.append(i)
+    current_words = [x for x in current_words if len(x) != 1]   
+    
+    current_words_multi = [x for x in current_words_multi if len(x) != 1 ]
+
+
 
 
     print(f"{current_words} - current words")
-    print(f"{side_word_multiplied}-side word multiplied")
-    print(f"{up_word_multiplied}-up word multiplied")
+    print(f"{current_words_multi}-current words multi")
+    
     return current_words
 
 
