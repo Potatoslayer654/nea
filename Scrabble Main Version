@@ -31,6 +31,12 @@ class ClassToStoreReturnedVariable:
         self.current_locations = []
         self.side_words = []
         self.up_words = []
+        self.triple_words = [(0,0),(7,0),(14,0),(0,7),(14,7),(0,14),(7,14),(14,14)]
+        self.double_words = [(1,1),(2,2),(3,3),(4,4),(1,13),(2,12),(3,11),(4,10),(13,1),(12,2),(11,3),(10,4),(13,13),(12,12),(11,11),(10,10),(7,7)]
+        self.triple_letters =[(1,5),(1,9),(5,1),(5,5),(5,9),(5,13),(9,1),(9,5),(9,9),(9,13),(13,5),(13,9)]
+        self.double_letters = [(0, 3),(0, 11),(2, 6),(2, 8),(3, 0),(3, 7),(3, 14),(6, 2),(6, 6),(6, 8),(6, 12),(7, 3),(7, 11),(8, 2),(8, 6),(8, 8),(8, 12),(11, 0),(11, 7),(11, 14),(12, 6),(12, 8),(14, 3),  (14, 11)]
+        self.side_words_multiplied = []   
+        self.up_words_multiplied = []
     def setFrozen (self, x):
         self.frozen = x
     def getFrozen (self):
@@ -67,7 +73,31 @@ class ClassToStoreReturnedVariable:
         self.side_words = x
     def getSide_words(self):
         return self.side_words
-
+    def setUp_words_multiplied(self,x):
+        self.up_words_multiplied = x
+    def getUp_words_multiplied(self):
+        return self.up_words_multiplied
+    def setSide_words_multiplied(self,x):
+        self.side_words_multiplied = x
+    def getSide_words_multiplied(self):
+        return self.side_words_multiplied
+   # def setTriple_words(self,x):
+   #     self.Triple_words = x
+   # def getTriple_words(self):
+   #     return self.Triple_words
+   # def setDouble_words(self,x):
+   #     self.Double_words = x
+   # def getDouble_words(self):
+   #     return self.Double_words
+   # def setTriple_letters(self,x):
+   #     self.Triple_letters = x
+   # def getTriple_letters(self):
+   #     return self.Triple_letters
+   # def setDouble_letters(self,x):
+   #     self.Double_letters = x
+   # def getDouble_letters(self):
+   #     return self.Double_letters
+    
 
 
 
@@ -75,24 +105,27 @@ class ClassToStoreReturnedVariable:
 
 variable = ClassToStoreReturnedVariable()
 
-def check_multipliers(row,col):
+def check_multipliers(row,col,letter):
     multipler_checker = ""
     tup = (row,col) 
     print(tup)
     for i in triple_words:
         if i == tup:
             multipler_checker = "tripleword"
+            letter = letter+"3"
     for i  in double_words:
         if i == tup:
             multipler_checker = "doubleword"
+            letter = letter + "2"
     for i in  triple_letters:
         if i == tup:
             multipler_checker = "tripleletter"
+            letter = letter +letter +letter
     for i in double_letters:
         if i == tup:
             multipler_checker = "doubleletter"
-    print(f"{multipler_checker}-multipler checker")
-    return multipler_checker
+            letter = letter +letter
+    return letter
 
 def invalid_play_checker(checker):
     if checker == False:
@@ -138,6 +171,8 @@ def creating_the_words(row,col):
     current_locations = variable.getCurrent_location()
     side_words = variable.getSide_words()
     up_words = variable.getUp_words()
+    side_words_multiplied = variable.getSide_words_multiplied
+    up_words_multiplied = variable.getUp_words_multiplied
     #check the letter of the current tile 
 
     up_word = [] 
@@ -146,23 +181,11 @@ def creating_the_words(row,col):
     side_word_multiplied = [] 
     widget = next((w for w in window.grid_slaves(row, col)), None)
     letter = widget.cget("text")
-    up_word_multiplied.append(letter)
-    result = check_multipliers(row,col)
-    print(f"{result}-result")
-        if result != "":
-            if result == "tripleword":
-                up_word_multiplied.append("3")
-            if result == "doubleword":
-                up_word_multiplied.append("2")
-            if result == "tripleletter":
-                up_word_multiplied.append(letter)
-                up_word_multiplied.append(letter)
-            if result == "doubleletter":
-                up_word_multiplied.append(letter)
-                    print(up_word_multiplied)
+    result = check_multipliers(row,col,letter)
     up_word.append(letter)
     side_word.append(letter)
-    up_word_multiplied.append(letter)
+    up_word_multiplied.append(result)
+    side_word_multiplied.append(result)
 
  
 
@@ -175,36 +198,13 @@ def creating_the_words(row,col):
             letter = widget.cget("text")
             if len(up_word) == 0:
                 up_word.append(letter)
-                up_word_multiplied.append(letter)
-                result = check_multipliers(row-counter,col)
-                print(f"{result}-result")
-                if result != "":
-                    if result == "tripleword":
-                        up_word_multiplied.append("3")
-                    if result == "doubleword":
-                        up_word_multiplied.append("2")
-                    if result == "tripleletter":
-                        up_word_multiplied.append(letter)
-                        up_word_multiplied.append(letter)
-                    if result == "doubleletter":
-                        up_word_multiplied.append(letter)
-                    print(up_word_multiplied)
+                result = check_multipliers(row-counter,col,letter)
+                up_word_multiplied.append(result)
 
             else:
                 up_word.insert(0,letter)
-                up_word_multiplied.append(letter)
-                result = check_multipliers(row-counter,col)
-                if result != "":
-                    if result == "tripleword":
-                        up_word_multiplied.append("3")
-                    if result == "doubleword":
-                        up_word_multiplied.append("2")
-                    if result == "tripleletter":
-                        up_word_multiplied.append(letter)
-                        up_word_multiplied.append(letter)
-                    if result == "doubleletter":
-                        up_word_multiplied.append(letter)
-                    print(up_word_multiplied)
+                result = check_multipliers(row-counter,col,letter)
+                up_word_multiplied.append(result)
             counter = counter + 1  
         else:
             break
@@ -215,24 +215,14 @@ def creating_the_words(row,col):
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
             up_word.append(letter)
-            up_word_multiplied.append(letter)
-            result = check_multipliers(row+counter,col)
-            if result != "":
-                    if result == "tripleword":
-                        up_word_multiplied.append("3")
-                    if result == "doubleword":
-                        up_word_multiplied.append("2")
-                    if result == "tripleletter":
-                        up_word_multiplied.append(letter)
-                        up_word_multiplied.append(letter)
-                    if result == "doubleletter":
-                        up_word_multiplied.append(letter)
-                    print(up_word_multiplied)
+            result = check_multipliers(row+counter,col,letter)
+            up_word_multiplied.append(result)
+            counter = counter + 1 
 
         else:
             break
 
-        counter = counter + 1 
+         
 
     counter = 1
 
@@ -242,37 +232,13 @@ def creating_the_words(row,col):
             letter = widget.cget("text")
             if side_word == 0:
                 side_word.append(letter)
-                side_word_multiplied.append(letter)
-                result = check_multipliers(row,col-counter)
-                if result != "":
-                    if result == "tripleword":
-                        side_word_multiplied.append("3")
-                    if result == "doubleword":
-                        side_word_multiplied.append("2")
-                    if result == "tripleletter":
-                        side_word_multiplied.append(letter)
-                        side_word_multiplied.append(letter)
-                    if result == "doubleletter":
-                        side_word_multiplied.append(letter)
-                    print(side_word_multiplied)
+                result = check_multipliers(row,col-counter,letter)
+                side_word_multiplied.append(result)
 
             else:
                 side_word.insert(0,letter)
-                side_word_multiplied.append(letter)
-                result = check_multipliers(row,col-counter)
-                if result != "":
-                    if result == "tripleword":
-                        side_word_multiplied.append("3")
-                    if result == "doubleword":
-                        side_word_multiplied.append("2")
-                    if result == "tripleletter":
-                        side_word_multiplied.append(letter)
-                        side_word_multiplied.append(letter)
-                    if result == "doubleletter":
-                        side_word_multiplied.append(letter)
-                    print(side_word_multiplied)
-
-
+                result = check_multipliers(row,col-counter,letter)
+                side_word_multiplied.append(result)
             counter = counter + 1
         else:
             break
@@ -282,20 +248,9 @@ def creating_the_words(row,col):
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
             side_word.append(letter)
-            side_word_multiplied.append(letter)
-            result = check_multipliers(row,col-counter)
-            if result != "":
-                    if result == "tripleword":
-                        side_word_multiplied.append("3")
-                    if result == "doubleword":
-                        side_word_multiplied.append("2")
-                    if result == "tripleletter":
-                        side_word_multiplied.append(letter)
-                        side_word_multiplied.append(letter)
-                    if result == "doubleletter":
-                        side_word_multiplied.append(letter)
-                    print(side_word_multiplied)
-            counter = counter + 1
+            result = check_multipliers(row,col-counter,letter)
+            side_word_multiplied.append(result)
+            counter = counter + 1 
         else:
             break
     #checks if the tiles placed are only horizontal or vertical
@@ -340,7 +295,8 @@ def creating_the_words(row,col):
 
 
     print(f"{current_words} - current words")
-
+    print(f"{side_word_multiplied}-side word multiplied")
+    print(f"{up_word_multiplied}-up word multiplied")
     return current_words
 
 
@@ -856,7 +812,6 @@ shuffle_button.place(width=CELL_SIZE, height=CELL_SIZE)
 shuffle_button.grid(row=15 , column=2 , sticky="nsew")
 
 
-#create the labels for the users hand 
 for j in range(3,10):
         frame = tk.Frame(window, bg=colours_hand[j-4] ,)
         frame.place(width=CELL_SIZE, height=CELL_SIZE) 
