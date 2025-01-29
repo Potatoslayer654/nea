@@ -106,7 +106,7 @@ class ClassToStoreReturnedVariable:
 
 variable = ClassToStoreReturnedVariable()
 
-def check_multipliers(row,col,letter):
+def check_multipliers(letter,row,col):
     multipler_checker = ""
     tup = (row,col) 
     print(tup)
@@ -151,6 +151,7 @@ def drag_motion(event):
     widget.place(width=CELL_SIZE, height=CELL_SIZE,x=x, y=y)
 def word_checker(words):
     checker = False
+    return 
     for i in words:
         word = "".join(i)
         word = word.lower()
@@ -166,31 +167,42 @@ def word_checker(words):
     else:
         print("a word in invalid")
         invalid_play_checker(checker)
+        
+def calculate_points(words_pos):
+    multi_word = ""
+    multi_list = []
+    for word in words_pos:
+        print(f"{word}-word")
+        for letter in word:
+            row = letter[0]
+            col = letter[1]
+            widget = next((w for w in window.grid_slaves(row,col)), None)
+            tile = widget.cget("text")
+            tile = check_multipliers(row,col,tile)
+            print(f"{tile}-tile")
+            multi_word = multi_word + tile
+        multi_list.append(multi_word)
+        multi_word = ""
+    print(f"{multi_list}-multi list")
+            
+            
+        
+            
+            
+        
 
 def creating_the_words(row,col):
-
     current_locations = variable.getCurrent_location()
     side_words = variable.getSide_words()
     up_words = variable.getUp_words()
-    side_words_multiplied = variable.getSide_words_multiplied()
-    up_words_multiplied = variable.getUp_words_multiplied()
     #check the letter of the current tile 
 
     up_word = [] 
-    side_word = [] 
-    up_word_multiplied = []
-    side_word_multiplied = [] 
-
-
+    side_word=[]  
     widget = next((w for w in window.grid_slaves(row, col)), None)
     letter = widget.cget("text")
-    result = check_multipliers(row,col,letter)
-    up_word.append(letter)
-    side_word.append(letter)
-    up_word_multiplied.append(result)
-    side_word_multiplied.append(result)
-
- 
+    up_word.append((letter,(row,col)))
+    side_word.append((letter,(row,col)))
 
     #check if there is a vertical word
     #check above the tile to see how much tiles are above it
@@ -200,14 +212,10 @@ def creating_the_words(row,col):
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
             if len(up_word) == 0:
-                up_word.append(letter)
-                result = check_multipliers(row-counter,col,letter)
-                up_word_multiplied.append(result)
-
+                up_word.append((letter,(row+counter, col)))
             else:
-                up_word.insert(0,letter)
-                result = check_multipliers(row-counter,col,letter)
-                up_word_multiplied.append(result)
+                up_word.insert(0,(letter,(row+counter, col)))
+            
             counter = counter + 1  
         else:
             break
@@ -217,15 +225,12 @@ def creating_the_words(row,col):
         widget = next((w for w in window.grid_slaves(row+counter, col)), None)
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
-            up_word.append(letter)
-            result = check_multipliers(row+counter,col,letter)
-            up_word_multiplied.append(result)
-            counter = counter + 1
-
+            up_word.append((letter,(row+counter, col)))
+            print(letter)
         else:
             break
 
-         
+        counter = counter + 1 
 
     counter = 1
 
@@ -234,14 +239,9 @@ def creating_the_words(row,col):
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
             if side_word == 0:
-                side_word.append(letter)
-                result = check_multipliers(row,col-counter,letter)
-                side_word_multiplied.append(result)
-
+                side_word.append((letter,(row,col-counter)))
             else:
-                side_word.insert(0,letter)
-                result = check_multipliers(row,col-counter,letter)
-                side_word_multiplied.append(result)
+                side_word.insert(0,(letter,(row,col-counter)))
             counter = counter + 1
         else:
             break
@@ -250,15 +250,10 @@ def creating_the_words(row,col):
         widget = next((w for w in window.grid_slaves(row, col+counter)), None)
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
-            side_word.append(letter)
-            result = check_multipliers(row,col+counter,letter)
-            side_word_multiplied.append(result)
-            counter = counter + 1 
+            side_word.append((letter,(row,col+counter)))
+            counter = counter + 1
         else:
             break
-
-    print(f"{up_word_multiplied}-up word multipler_checker")
-    print(f"{side_word_multiplied}-side word mulit")
 
     #checks if the tiles placed are only horizontal or vertical
     checker_tile = current_locations[0]
@@ -268,79 +263,57 @@ def creating_the_words(row,col):
         vertical_word = True
     else:
         horizontal_word = True
-    #make the direction of the current tiles become stored as one word 
-    if horizontal_word == True:
-        up_words = copy.deepcopy(up_word)
-        side_words.append(copy.deepcopy(side_word))
-    else :
-        side_words = copy.deepcopy(side_word)
-        up_words.append(copy.deepcopy(up_word))
-
-    if horizontal_word == True:
-        variable.setUp_words_multiplied(up_word_multiplied)
-        side_words_multiplied.append(copy.deepcopy(side_word_multiplied))
-        variable.setSide_words_multiplied(side_words_multiplied)
-    else:
-        variable.setSide_words_multiplied(side_word_multiplied)
-        up_words_multiplied.append(copy.deepcopy(up_word_multiplied))
-        variable.setUp_words_multiplied(up_words_multiplied)
-
-
-
-    print(f"{up_word_multiplied}-up word multipler_checker")
-    print(f"{side_word_multiplied}-side word mulit")
-
-
+        
+    if horizontal_word  == True:
+        up_words = up_word
+        side_words.append(side_word)
+    if vertical_word:
+        side_words = side_word
+        up_words.append(up_word)
 
 
     variable.setUp_words(up_words)
     variable.setSide_words(side_words)
+    #check if there is a horizontal word  
 
 
-    #check if there is a horizontal word 
-
-    side_words_multiplied = variable.getSide_words_multiplied()
-    up_words_multiplied = variable.getUp_words_multiplied() 
-
-    #combine side and up words to show current words as one list
     current_words = []
-    current_words_multi = []
+
     if vertical_word == True:
         for i in up_words:
             current_words.append(i)
-        for x in up_words_multiplied:
-            current_words_multi.append(i)
-        current_words.append(side_words)
-        current_words_multi.append(side_words_multiplied)
+        current_words.append(side_word)
 
     if horizontal_word == True:
         for i in side_words:
             current_words.append(i)
-        for x in side_words_multiplied:
-            current_words_multi.append(i)
         current_words.append(up_words)
-        current_words_multi.append(up_words_multiplied)
 
-    current_words = [x for x in current_words if len(x) != 1]   
+    fixed_current_words = current_words.copy()
+    current_words = []   
+    for i in fixed_current_words:
+        if len(i) != 1 :
+            current_words.append(i)
+    #seperate the list into the acutual letters in the word and the posistions of each letter in the words
+    current_word_str = ""
+    current_word_pos = []
+    current_words_str = []
+    current_words_pos = []
+    for i in current_words:
+        for x in i:
+            current_word_str = current_word_str + x[0]
+            current_word_pos.append(x[1])
+        current_words_str.append(current_word_str)
+        current_words_pos.append(current_word_pos)
+        current_word_str = ""
+        current_word_pos = []
+        
+    calculate_points(current_words_pos)
 
-    current_words_multi = [x for x in current_words_multi if len(x) != 1]
-    
-    
 
-
-
-
-    print(f"{up_words} - uup words")
-    print(f"{up_words_multiplied}-up word multipler_checker")
-    print()
-    print(f"{side_words_multiplied}-side word mulit")
-    print(f"{side_words}-side words")
-    print()
-    print(f"{current_words} - current words")
-    print(f"{current_words_multi}-current words multi")
-    print()
-    print(f"{current_locations}")
-    
+    #print(f"{current_words} - current words")
+    #print(f"{current_words_str} - curretn strs")
+    #print(f"{current_words_pos} - currentpos")
     return current_words
 
 
