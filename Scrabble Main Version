@@ -11,10 +11,7 @@ board_tile_location = [] # location of all tiles on the 15x15 board
 colours_hand = ["#1E90FF","#6495ED","#4863A0","#79BAEC",'#95B9C7', '#36454F'] # colours for the hand labels
 score = {letter: score for letter, score in zip(
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ", [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10])}
-triple_words = [(0,0),(7,0),(14,0),(0,7),(14,7),(0,14),(7,14),(14,14)]
-double_words = [(1,1),(2,2),(3,3),(4,4),(1,13),(2,12),(3,11),(4,10),(13,1),(12,2),(11,3),(10,4),(13,13),(12,12),(11,11),(10,10)]
-triple_letters =[(1,5),(1,9),(5,1),(5,5),(5,9),(5,13),(9,1),(9,5),(9,9),(9,13),(13,5),(13,9)]
-double_letters = [(0, 3),(0, 11),(2, 6),(2, 8),(3, 0),(3, 7),(3, 14),(6, 2),(6, 6),(6, 8),(6, 12),(7, 3),(7, 11),(8, 2),(8, 6),(8, 8),(8, 12),(11, 0),(11, 7),(11, 14),(12, 6),(12, 8),(14, 3),  (14, 11)]
+
 
 class ClassToStoreReturnedVariable:
     def __init__ (self):
@@ -82,22 +79,22 @@ class ClassToStoreReturnedVariable:
         self.side_words_multiplied = x
     def getSide_words_multiplied(self):
         return self.side_words_multiplied
-   # def setTriple_words(self,x):
-   #     self.Triple_words = x
-   # def getTriple_words(self):
-   #     return self.Triple_words
-   # def setDouble_words(self,x):
-   #     self.Double_words = x
-   # def getDouble_words(self):
-   #     return self.Double_words
-   # def setTriple_letters(self,x):
-   #     self.Triple_letters = x
-   # def getTriple_letters(self):
-   #     return self.Triple_letters
-   # def setDouble_letters(self,x):
-   #     self.Double_letters = x
-   # def getDouble_letters(self):
-   #     return self.Double_letters
+    def setTriple_words(self,x):
+         self.triple_words = x
+    def getTriple_words(self):
+        return self.triple_words
+    def setDouble_words(self,x):
+        self.double_words = x
+    def getDouble_words(self):
+        return self.double_words
+    def setTriple_letters(self,x):
+        self.triple_letters = x
+    def getTriple_letters(self):
+        return self.triple_letters
+    def setDouble_letters(self,x):
+        self.double_letters = x
+    def getDouble_letters(self):
+        return self.double_letters
     
 
 
@@ -106,27 +103,49 @@ class ClassToStoreReturnedVariable:
 
 variable = ClassToStoreReturnedVariable()
 
-def check_multipliers(letter,row,col):
+def check_multipliers(row,col,letter):
+    double_words = variable.getDouble_words()
+    triple_words = variable.getTriple_words()
+    double_letters = variable.getDouble_letters()
+    triple_letters = variable.getTriple_letters()
+
     multipler_checker = ""
+
     tup = (row,col) 
-    print(tup)
-    for i in triple_words:
+
+
+    for i in triple_words.copy():
         if i == tup:
-            multipler_checker = "tripleword"
-            letter = letter+"3"
-    for i  in double_words:
+            letter = letter + "3"
+            triple_words.remove(i)
+            variable.setTriple_words(triple_words)
+            return letter
+
+
+    for i  in double_words.copy():
         if i == tup:
-            multipler_checker = "doubleword"
             letter = letter + "2"
-    for i in  triple_letters:
+            double_words.remove(i)
+            variable.setDouble_words(double_words)
+            return letter
+
+
+    for i in triple_letters.copy():
         if i == tup:
-            multipler_checker = "tripleletter"
-            letter = letter +letter +letter
-    for i in double_letters:
+            letter = letter + letter + letter
+            triple_letters.remove(i)
+            variable.setTriple_letters(triple_letters)
+            return letter
+
+    for i in double_letters.copy():
         if i == tup:
-            multipler_checker = "doubleletter"
-            letter = letter +letter
+            letter = letter + letter
+            double_letters.remove(i)
+            variable.setDouble_letters(double_letters)
+            return letter
     return letter
+
+    
 
 def invalid_play_checker(checker):
     if checker == False:
@@ -169,20 +188,36 @@ def word_checker(words):
         invalid_play_checker(checker)
         
 def calculate_points(words_pos):
+    #this function will find the multiplier on the current tile and store it as a new variable called multi_word
+    print(f"{words_pos}-word_pos")
     multi_word = ""
     multi_list = []
+    tile = ""
     for word in words_pos:
-        print(f"{word}-word")
+
         for letter in word:
+            print(f"{letter}-letter")
+
             row = letter[0]
+
             col = letter[1]
+
             widget = next((w for w in window.grid_slaves(row,col)), None)
-            tile = widget.cget("text")
-            tile = check_multipliers(row,col,tile)
-            print(f"{tile}-tile")
-            multi_word = multi_word + tile
+
+            if isinstance(widget,tk.Label):
+
+                tile = widget.cget("text")
+                print(f"{tile}- tile")
+
+                tile = check_multipliers(row,col,tile)
+
+
+                multi_word = multi_word + tile
+
         multi_list.append(multi_word)
+
         multi_word = ""
+
     print(f"{multi_list}-multi list")
             
             
@@ -212,9 +247,9 @@ def creating_the_words(row,col):
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
             if len(up_word) == 0:
-                up_word.append((letter,(row+counter, col)))
+                up_word.append((letter,(row-counter, col)))
             else:
-                up_word.insert(0,(letter,(row+counter, col)))
+                up_word.insert(0,(letter,(row-counter, col)))
             
             counter = counter + 1  
         else:
@@ -294,6 +329,7 @@ def creating_the_words(row,col):
     for i in fixed_current_words:
         if len(i) != 1 :
             current_words.append(i)
+    current_words = [x for x in current_words if type(x) is list]
     #seperate the list into the acutual letters in the word and the posistions of each letter in the words
     current_word_str = ""
     current_word_pos = []
@@ -311,9 +347,9 @@ def creating_the_words(row,col):
     calculate_points(current_words_pos)
 
 
-    #print(f"{current_words} - current words")
-    #print(f"{current_words_str} - curretn strs")
-    #print(f"{current_words_pos} - currentpos")
+    print(f"{current_words} - current words")
+    print(f"{current_words_str} - curretn strs")
+    print(f"{current_words_pos} - currentpos")
     return current_words
 
 
@@ -764,6 +800,15 @@ for i in range(15):
 
 
 #Create Background colour for the grid
+
+double_words = variable.getDouble_words()
+triple_words = variable.getTriple_words()
+double_letters = variable.getDouble_letters()
+triple_letters = variable.getTriple_letters()
+
+
+
+
 frame = tk.Frame(window, bg=random.choice(colours))
 frame.place(width=CELL_SIZE, height=CELL_SIZE) 
 for i in range(15):
