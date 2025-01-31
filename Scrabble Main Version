@@ -24,7 +24,6 @@ class ClassToStoreReturnedVariable:
         ["U"] * 4 + ["V"] * 2 + ["W"] * 2 + ["X"] * 1 + ["Y"] * 2 + ["Z"] * 1 + ["blank"] * 2)
         self.tile_bag_amount = 100
         self.green_grids = []
-        self.banned_tiles = []
         self.grid_locations =[]
         self.current_locations = []
         self.side_words = []
@@ -51,10 +50,6 @@ class ClassToStoreReturnedVariable:
         self.green_grids = x
     def getGreen_grids(self):
         return self.green_grids
-    def setBanned_tiles(self,x):
-        self.banned_tiles = x
-    def getBanned_tiles(self):
-        return self.banned_tiles
     def setGrid_location(self,x):
         self.grid_locations = x
     def getGrid_location(self):
@@ -103,22 +98,64 @@ class ClassToStoreReturnedVariable:
 
 variable = ClassToStoreReturnedVariable()
 
+def point_calculator(word):
+    word = word.upper()
+
+    word_list = list(word)
+    total = 0
+    double_multi = 0 
+    triple_multi = 0
+
+    triple_multi = 0
+
+    for i in word:
+        if i == "3":
+            word_list.remove(i)
+            triple_multi += 1
+    print(triple_multi)
+
+
+    for i in word:
+        if i == "2":
+            word_list.remove(i)
+            double_multi += 1
+    print(word_list)
+    print(double_multi)
+
+    word = "".join(word_list)
+    if double_multi > 0:
+        word = word*(2**double_multi)
+    if triple_multi > 0:
+        word = word*(3**triple_multi)
+
+    for i in word:
+        x = score.get(i)
+        total = total + x
+
+    return total
+
+
+
+
+
+
+
+#will check each letter to see if a multiplier is on that tile 
 def check_multipliers(row,col,letter):
-    double_words = variable.getDouble_words()
-    triple_words = variable.getTriple_words()
-    double_letters = variable.getDouble_letters()
-    triple_letters = variable.getTriple_letters()
+
 
     multipler_checker = ""
 
-    tup = (row,col) 
+    tup = (row,col)
+
+    if tup in locked_tiles:
+        return letter 
 
 
     for i in triple_words.copy():
         if i == tup:
             letter = letter + "3"
             triple_words.remove(i)
-            variable.setTriple_words(triple_words)
             return letter
 
 
@@ -126,23 +163,20 @@ def check_multipliers(row,col,letter):
         if i == tup:
             letter = letter + "2"
             double_words.remove(i)
-            variable.setDouble_words(double_words)
             return letter
 
 
     for i in triple_letters.copy():
         if i == tup:
             letter = letter + letter + letter
-            triple_letters.remove(i)
-            variable.setTriple_letters(triple_letters)
             return letter
 
     for i in double_letters.copy():
         if i == tup:
             letter = letter + letter
-            double_letters.remove(i)
-            variable.setDouble_letters(double_letters)
             return letter
+
+
     return letter
 
     
@@ -168,6 +202,7 @@ def drag_motion(event):
     
     #This will keep the widget to change and stay with the Pointer on screen
     widget.place(width=CELL_SIZE, height=CELL_SIZE,x=x, y=y)
+
 def word_checker(words):
     checker = False
     return 
@@ -187,7 +222,7 @@ def word_checker(words):
         print("a word in invalid")
         invalid_play_checker(checker)
         
-def calculate_points(words_pos):
+def calculate_multiplier(words_pos):
     #this function will find the multiplier on the current tile and store it as a new variable called multi_word
     print(f"{words_pos}-word_pos")
     multi_word = ""
@@ -196,7 +231,6 @@ def calculate_points(words_pos):
     for word in words_pos:
 
         for letter in word:
-            print(f"{letter}-letter")
 
             row = letter[0]
 
@@ -207,7 +241,7 @@ def calculate_points(words_pos):
             if isinstance(widget,tk.Label):
 
                 tile = widget.cget("text")
-                print(f"{tile}- tile")
+
 
                 tile = check_multipliers(row,col,tile)
 
@@ -218,7 +252,17 @@ def calculate_points(words_pos):
 
         multi_word = ""
 
-    print(f"{multi_list}-multi list")
+    total_points = 0
+
+
+    #for word in multi_list:
+    #    word_points = point_calculator(word)
+    #    total_points = total_points + word_points
+    #play_button.config(text = total_points)
+    print(multi_word)
+
+
+
             
             
         
@@ -289,7 +333,10 @@ def creating_the_words(row,col):
             counter = counter + 1
         else:
             break
-
+    print(f"{up_word}-up word")
+    print(f"{side_word}-side_word")
+    print(f"{up_words}-up words")
+    print(f"{side_words}-side words")
     #checks if the tiles placed are only horizontal or vertical
     checker_tile = current_locations[0]
     horizontal_word = False
@@ -305,6 +352,8 @@ def creating_the_words(row,col):
     if vertical_word:
         side_words = side_word
         up_words.append(up_word)
+    print(f"{up_words}-up words")
+    print(f"{side_words}-side words")
 
 
     variable.setUp_words(up_words)
@@ -317,12 +366,13 @@ def creating_the_words(row,col):
     if vertical_word == True:
         for i in up_words:
             current_words.append(i)
-        current_words.append(side_word)
+        current_words.append(side_words)
 
     if horizontal_word == True:
         for i in side_words:
             current_words.append(i)
         current_words.append(up_words)
+    print(current_words)
 
     fixed_current_words = current_words.copy()
     current_words = []   
@@ -344,7 +394,7 @@ def creating_the_words(row,col):
         current_word_str = ""
         current_word_pos = []
         
-    calculate_points(current_words_pos)
+    calculate_multiplier(current_words_pos)
 
 
     print(f"{current_words} - current words")
