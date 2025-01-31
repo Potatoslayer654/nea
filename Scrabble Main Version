@@ -12,7 +12,7 @@ colours_hand = ["#1E90FF","#6495ED","#4863A0","#79BAEC",'#95B9C7', '#36454F'] # 
 score = {letter: score for letter, score in zip(
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ", [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10])}
 
-
+#This class is used to call variables needed to be used in functions and need to be changed globally
 class ClassToStoreReturnedVariable:
     def __init__ (self):
         self.frozen = False
@@ -98,40 +98,71 @@ class ClassToStoreReturnedVariable:
 
 variable = ClassToStoreReturnedVariable()
 
+
+#This function will calculate the amount of points a word will have with multiplier accounted for 
 def point_calculator(word):
+    #Make all the letters uppercase
     word = word.upper()
-
+    
+    #Make a list of all the letters
     word_list = list(word)
+    
+    #Total is the variabe used to store the cumulative points of all the letters 
     total = 0
-    double_multi = 0 
+    
+    #Hold the amount of double multipliers are in the letter
+    double_multi = 0
+    
+    #Hold the amount of Triple multipliers are in the letter 
     triple_multi = 0
-
-    triple_multi = 0
-
+    
+    #Check through the word to see if there is a "3"
     for i in word:
+        
         if i == "3":
+            #remove that 3 from the word list
             word_list.remove(i)
+            
+            #As a 3 is present add 1 to triple_mulitplier
             triple_multi += 1
+            
     print(triple_multi)
 
-
+    #Check through the word to see if there is a "2" 
     for i in word:
         if i == "2":
+            #remove 2 from the word list
             word_list.remove(i)
+            
+            #As a 2 is present add 1 to the double_multiplier
             double_multi += 1
+            
     print(word_list)
     print(double_multi)
-
+    #Set the new word_list as word
+    #Word_list will have no numbers in it.
     word = "".join(word_list)
+    
+    #Check if there are any double multipiers in the word
     if double_multi > 0:
+        
+        #Double the word x amount of times depending on the amount of double multipliers
         word = word*(2**double_multi)
+    #Check if there are any triple multipliers in the word
     if triple_multi > 0:
+        
+        #Triple the word n amount of times depending on the amount of triple multipliers
         word = word*(3**triple_multi)
-
+    
+    #Go through each letter in the word
     for i in word:
+        #Find each letters score through the score dictionary
         x = score.get(i)
+        
+        #Add the letters value to a total score 
         total = total + x
-
+    
+    #return the total score of the word sent to the function
     return total
 
 
@@ -140,55 +171,91 @@ def point_calculator(word):
 
 
 
-#will check each letter to see if a multiplier is on that tile 
+#This functionn will check each letter to see if a multiplier is on that tile 
 def check_multipliers(row,col,letter):
 
-
-    multipler_checker = ""
-
+    #Create a tuple conating the row and col of the letter 
     tup = (row,col)
-
+    
+    #Check if the tuple is a locked tile
     if tup in locked_tiles:
+        
+        #Return the letter if  it is in a locked as multipliers don't count if the tile is locked
         return letter 
 
-
+    #Check through each position in triple words
     for i in triple_words.copy():
+        
+        #Check if the tup is in triple_word 
         if i == tup:
+            
+            #Add "3" to the letter to show that word needs to be multiplied by 3
             letter = letter + "3"
-            triple_words.remove(i)
+            
+            #Return letter if a multiplier is found 
             return letter
 
-
+    #Check through each position in double words
     for i  in double_words.copy():
+        
+        #check if the tuple is in double words
         if i == tup:
+            
+            #Add "2" to the letter to show that the word needs to be multiplied by 2
             letter = letter + "2"
-            double_words.remove(i)
+            
+            #Return letter if a multiplier is found
             return letter
 
-
+    #Check through each position in triple letters
     for i in triple_letters.copy():
+        
+        #Check if the tuple is in triple letters
         if i == tup:
+            
+            #Make letter be 3 letters to show the letter has been multiplied by 3
             letter = letter + letter + letter
+            
+            #Return if a multiplier is found
             return letter
-
+        
+    #Check through each poisition in double letters
     for i in double_letters.copy():
+        
+        #Check if the tuple is in double letters
         if i == tup:
+            
+            #Make letter be 2 letters to show the letter has been multiplied by 2
             letter = letter + letter
+            
+            #Return letter if a multiplier is found
             return letter
 
-
+    #If no multiplier has been found return letter in its original state
     return letter
 
     
-
+#This function will check if the action made is legal
 def invalid_play_checker(checker):
+    
     if checker == False:
+        #As the checker is False make the play button red 
         play_button.config(bg = "red")
+        
+        #As the checker is False prevent the user from ending his turn by changing the function of the button to invalid input
         play_button.config(command = invalid_input)
+        
     else:
+        #As the checker is True the move is legal so the colour should be white
         play_button.config(bg = "white")
+        
+        #As the checker is True the function should be end_turn 
         play_button.config(command = end_turn)
+        
+        
+#This function is called when the user presses the play when the play is invalid  
 def invalid_input():
+    
     print("invalid play")
 
 
