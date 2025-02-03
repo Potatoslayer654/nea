@@ -34,6 +34,7 @@ class ClassToStoreReturnedVariable:
         self.double_letters = [(0, 3),(0, 11),(2, 6),(2, 8),(3, 0),(3, 7),(3, 14),(6, 2),(6, 6),(6, 8),(6, 12),(7, 3),(7, 11),(8, 2),(8, 6),(8, 8),(8, 12),(11, 0),(11, 7),(11, 14),(12, 6),(12, 8),(14, 3),  (14, 11)]
         self.side_words_multiplied = []   
         self.up_words_multiplied = []
+        self.total_points = 0
     def setFrozen (self, x):
         self.frozen = x
     def getFrozen (self):
@@ -90,6 +91,10 @@ class ClassToStoreReturnedVariable:
         self.double_letters = x
     def getDouble_letters(self):
         return self.double_letters
+    def setTotal_points(self,x):
+        self.total_points = x
+    def getTotal_points(self):
+        return self.total_points
     
 
 
@@ -126,7 +131,6 @@ def point_calculator(word):
             #As a 3 is present add 1 to triple_mulitplier
             triple_multi += 1
             
-    print(triple_multi)
 
     #Check through the word to see if there is a "2" 
     for i in word:
@@ -137,8 +141,7 @@ def point_calculator(word):
             #As a 2 is present add 1 to the double_multiplier
             double_multi += 1
             
-    print(word_list)
-    print(double_multi)
+
     #Set the new word_list as word
     #Word_list will have no numbers in it.
     word = "".join(word_list)
@@ -163,6 +166,9 @@ def point_calculator(word):
         total = total + x
     
     #return the total score of the word sent to the function
+
+
+
     return total
 
 
@@ -271,8 +277,8 @@ def drag_motion(event):
     widget.place(width=CELL_SIZE, height=CELL_SIZE,x=x, y=y)
 
 def word_checker(words):
-    checker = False
-    return 
+    print(f"{words}-words")
+    checker = False 
     for i in words:
         word = "".join(i)
         word = word.lower()
@@ -319,14 +325,19 @@ def calculate_multiplier(words_pos):
 
         multi_word = ""
 
-    total_points = 0
+    current_points = 0
 
 
-    #for word in multi_list:
-    #    word_points = point_calculator(word)
-    #    total_points = total_points + word_points
-    #play_button.config(text = total_points)
-    print(multi_word)
+    for word in multi_list:
+        word_points = point_calculator(word)
+        current_points = current_points + word_points
+    points_button.config(text = current_points)
+
+    #Stores the Total_points as the points the player currently has
+    total_points = variable.getTotal_points()
+
+    total_points =  total_points + current_points
+
 
 
 
@@ -341,6 +352,7 @@ def creating_the_words(row,col):
     current_locations = variable.getCurrent_location()
     side_words = variable.getSide_words()
     up_words = variable.getUp_words()
+
     #check the letter of the current tile 
 
     up_word = [] 
@@ -372,7 +384,6 @@ def creating_the_words(row,col):
         if isinstance(widget, tk.Label):
             letter = widget.cget("text")
             up_word.append((letter,(row+counter, col)))
-            print(letter)
         else:
             break
 
@@ -400,10 +411,6 @@ def creating_the_words(row,col):
             counter = counter + 1
         else:
             break
-    print(f"{up_word}-up word")
-    print(f"{side_word}-side_word")
-    print(f"{up_words}-up words")
-    print(f"{side_words}-side words")
     #checks if the tiles placed are only horizontal or vertical
     checker_tile = current_locations[0]
     horizontal_word = False
@@ -419,8 +426,6 @@ def creating_the_words(row,col):
     if vertical_word:
         side_words = side_word
         up_words.append(up_word)
-    print(f"{up_words}-up words")
-    print(f"{side_words}-side words")
 
 
     variable.setUp_words(up_words)
@@ -439,14 +444,23 @@ def creating_the_words(row,col):
         for i in side_words:
             current_words.append(i)
         current_words.append(up_words)
-    print(current_words)
 
     fixed_current_words = current_words.copy()
     current_words = []   
     for i in fixed_current_words:
         if len(i) != 1 :
             current_words.append(i)
-    current_words = [x for x in current_words if type(x) is list]
+
+    fixed_current_words = current_words.copy()
+
+    temp = []
+    for i in fixed_current_words :
+        if type(i) is not list and len(current_words) != 0:
+            temp.append(i)
+            current_words.remove(i)
+    if len(temp) != 0 :
+        current_words.append(temp.copy())
+
     #seperate the list into the acutual letters in the word and the posistions of each letter in the words
     current_word_str = ""
     current_word_pos = []
@@ -467,7 +481,7 @@ def creating_the_words(row,col):
     print(f"{current_words} - current words")
     print(f"{current_words_str} - curretn strs")
     print(f"{current_words_pos} - currentpos")
-    return current_words
+    return (current_words_str)
 
 
 
@@ -677,10 +691,21 @@ def drop(event):
 
 #This function will end the users turn by locking the tiles placed , re-filling the users hand and freezing the user so they cant do any moves
 def end_turn():
-    #Call the Attribures Grid_Locations
+    #Call the Attribures Grid_Locations,Side_words,Up_words
     grid_locations = variable.getGrid_location()
+
     side_words = variable.getSide_words()
+
     up_words = variable.getUp_words()
+
+    total_points = variable.getTotal_points()
+
+    widget = next((w for w in window.grid_slaves(0, 17)), None)
+    current_points = widget.cget("text")
+    total_points = total_points + int(current_points)
+    total_point.config(text = str(total_points))
+
+    variable.setTotal_points(total_points)
     #check the location of each tile within grid_locaitons
     for i in grid_locations:
         
@@ -706,18 +731,25 @@ def end_turn():
     empty = []
     variable.setCurrent_location(empty)
 
+    #Set the points button to 0
+    points_button.config(text = "0")
 
 
 
 
+    #Reset all the global variables at the end of the turn 
     x = [] 
     variable.setUp_words(x)
+
     variable.setSide_words(x) 
+
     variable.setUp_words_multiplied(x)
+
     variable.setSide_words_multiplied(x)
 
     #call the check_hand() function to be able to re fill the users hand 
     check_hand()
+
 
 
 
@@ -849,6 +881,11 @@ def recall():
                             grid_locations.remove((current_row,current_col))
                             current_locations.remove((current_row,current_col))
                             break
+
+
+    #Set the points button to 0
+    points_button.config(text = "0")
+
     x = [] 
     variable.setUp_words(x)
     variable.setSide_words(x)
@@ -905,15 +942,16 @@ def shuffle():
 
 window = tk.Tk()
 window.title("Grid")
-window.geometry("750x800")
+window.geometry("900x800")
 
 print(window.winfo_screenwidth())
 
 # Configure the grid to have fixed cell sizes
 for i in range(16): # Set minimum size for columns
     window.rowconfigure(i, weight=1, minsize=CELL_SIZE) # Set minimum size for rows
-for i in range(15):
+for i in range(18):
     window.columnconfigure(i, weight=1, minsize=CELL_SIZE)   # Set minimum size for columns
+
 
 
 #Create Background colour for the grid
@@ -994,6 +1032,37 @@ recall_button.grid(row=15 , column=12 , sticky="nsew")
 shuffle_button = ttk.Button(window , text="shuffle",command = shuffle)
 shuffle_button.place(width=CELL_SIZE, height=CELL_SIZE)
 shuffle_button.grid(row=15 , column=2 , sticky="nsew")
+
+
+points_button = ttk.Button(window , text="0")
+points_button.place(width=CELL_SIZE, height=CELL_SIZE)
+points_button.grid(row=0 , column=17 , sticky="nsew")
+
+
+total_point = ttk.Button(window , text="0")
+total_point.place(width=CELL_SIZE, height=CELL_SIZE)
+total_point.grid(row=1 , column=17 , sticky="nsew")
+
+
+current_label = tk.Label(window,text="Current")
+current_label.place(width=CELL_SIZE, height=CELL_SIZE)
+current_label.grid(row=0 , column=15 , sticky="nsew")
+
+points_label = tk.Label(window,text="points")
+points_label.place(width=CELL_SIZE, height=CELL_SIZE)
+points_label.grid(row=0 , column=16 , sticky="nsew")
+
+total_label = tk.Label(window,text="Total")
+total_label.place(width=CELL_SIZE, height=CELL_SIZE)
+total_label.grid(row=1 , column=15 , sticky="nsew")
+
+points2_label = tk.Label(window,text="points")
+points2_label.place(width=CELL_SIZE, height=CELL_SIZE)
+points2_label.grid(row=1 , column=16 , sticky="nsew")
+
+
+
+
 
 
 for j in range(3,10):
