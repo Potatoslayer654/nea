@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import Toplevel
 from tkinter import ttk
 import random
 import requests
@@ -102,6 +103,28 @@ class ClassToStoreReturnedVariable:
 
 
 variable = ClassToStoreReturnedVariable()
+
+def blank_tile_window(widget):
+    def set_letter(letter):
+        widget.config(text=letter)
+        blank_window.destroy()
+
+
+    blank_window = tk.Toplevel(window)
+    blank_window.title("Choose a Letter as your blank tile")
+    blank_window.geometry("250x300")
+
+    for i in range(6): # Set minimum size for columns
+        blank_window.rowconfigure(i, weight=1, minsize=CELL_SIZE) # Set minimum size for rows
+    for i in range(5):
+        blank_window.columnconfigure(i, weight=1, minsize=CELL_SIZE)   # Set minimum size for columns
+
+    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    for i, letter in enumerate(letters):
+        button = tk.Button(blank_window, text=letter, command=lambda l=letter: set_letter(l))
+        button.place(width=CELL_SIZE, height=CELL_SIZE)
+        button.grid(row=i//5, column=i%5,sticky = "nsew")
 
 
 #This function will calculate the amount of points a word will have with multiplier accounted for 
@@ -461,6 +484,8 @@ def creating_the_words(row,col):
     if len(temp) != 0 :
         current_words.append(temp.copy())
 
+    current_words = [x for x in current_words if len(x) > 1]
+
     #seperate the list into the acutual letters in the word and the posistions of each letter in the words
     current_word_str = ""
     current_word_pos = []
@@ -478,9 +503,8 @@ def creating_the_words(row,col):
     calculate_multiplier(current_words_pos)
 
 
-    print(f"{current_words} - current words")
     print(f"{current_words_str} - curretn strs")
-    print(f"{current_words_pos} - currentpos")
+    
     return (current_words_str)
 
 
@@ -677,6 +701,8 @@ def drop(event):
                     #Add this location to current locations as it is a new location within the same turn 
                     current_locations.remove(new_tuple)
                 else:
+                    if widget.cget("text") == "blank":
+                        blank_tile_window(widget)
                     current_words = creating_the_words(new_row,new_col)
                     word_checker(current_words)
             
