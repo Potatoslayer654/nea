@@ -1,0 +1,23 @@
+import socket
+import threading
+
+client_socket = socket.socket()
+host = socket.gethostname()
+port = 5000
+
+client_socket.connect((host, port))
+
+
+#def send_message():
+    
+
+while True:
+    message = input("say something")
+    client_socket.send(message.encode())
+    
+    data = client_socket.recv(1024)
+    data = data.decode()
+    if not data:
+        break
+    print(str(data))
+    
