@@ -1,0 +1,34 @@
+import socket
+import threading
+
+host = socket.gethostname()
+port = 5000
+
+sever_socket = socket.socket()
+
+sever_socket.bind((host,port))
+
+sever_socket.listen(2)
+print(f"sever is now listeng with port {port}")
+
+clients =  []
+
+def recieve_message(conn,address):
+    while True:
+        data = conn.recv(1024)
+        data = data.decode()
+        if not data:
+            break
+        print(str(data))
+    
+        conn.sendall(data.encode())
+    
+while True:
+    
+    conn,address = sever_socket.accept()
+    clients.append(conn)
+    print(f"connection from {address}")
+    
+    threading.Thread(target=recieve_message,args=(conn,address)).start()
+    
+    
