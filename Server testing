@@ -16,12 +16,14 @@ clients =  []
 def recieve_message(conn,address):
     while True:
         data = conn.recv(1024)
-        data = data.decode()
         if not data:
             break
-        print(str(data))
-    
-        conn.sendall(data.encode())
+        data = data.decode()
+        print(f"received-{str(data)}")
+        for client in clients:
+            if client != conn:
+                print("sending data")
+                client.sendall(data.encode())
     
 while True:
     
@@ -30,5 +32,3 @@ while True:
     print(f"connection from {address}")
     
     threading.Thread(target=recieve_message,args=(conn,address)).start()
-    
-    
