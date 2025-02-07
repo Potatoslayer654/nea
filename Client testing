@@ -1,5 +1,7 @@
 import socket
 import threading
+from tkinter import *
+
 
 client_socket = socket.socket()
 host = socket.gethostname()
@@ -8,16 +10,20 @@ port = 5000
 client_socket.connect((host, port))
 
 
-#def send_message():
+def send_message():
+        message = ("client 2 button pressed")
+        client_socket.send(message.encode())
     
-
-while True:
-    message = input("say something")
-    client_socket.send(message.encode())
-    
-    data = client_socket.recv(1024)
-    data = data.decode()
-    if not data:
-        break
-    print(str(data))
-    
+def return_message():
+    while True:
+        data = client_socket.recv(1024)
+        data = data.decode()
+        if not data:
+            break
+        print(f"{str(data)}-this is the data") 
+threading.Thread(target=return_message).start()
+window = Tk()
+window.geometry("100x100")
+B = Button(window, text ="Client 2", command = send_message)
+B.place(x=50 , y=50)
+window.mainloop()
