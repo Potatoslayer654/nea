@@ -4,10 +4,12 @@ from tkinter import ttk
 import random
 import requests
 import copy
+import socket
+import threading
+import json
 CELL_SIZE = 50      # size of each grid cell in pixels
 colour_list = []    
-colours = ["#F9E4BC", '#895129'] # colours for the board
-locked_tiles = [] # tiles what cannot move 
+colours = ["#F9E4BC", '#895129'] # colours for the board 
 board_tile_location = [] # location of all tiles on the 15x15 board
 colours_hand = ["#1E90FF","#6495ED","#4863A0","#79BAEC",'#95B9C7', '#36454F'] # colours for the hand labels
 score = {letter: score for letter, score in zip(
@@ -36,6 +38,7 @@ class ClassToStoreReturnedVariable:
         self.side_words_multiplied = []   
         self.up_words_multiplied = []
         self.total_points = 0
+        self.locked_tiles = []
     def setFrozen (self, x):
         self.frozen = x
     def getFrozen (self):
@@ -96,13 +99,111 @@ class ClassToStoreReturnedVariable:
         self.total_points = x
     def getTotal_points(self):
         return self.total_points
-    
-
-
-
+    def setLocked_tiles(self,x):
+        self.locked_tiles = x
+    def getLocked_tiles(self):
+        return self.locked_tiles
 
 
 variable = ClassToStoreReturnedVariable()
+
+client_socket = socket.socket()
+host = socket.gethostname()
+port = 5001
+
+client_socket.connect((host, port))
+
+def format_message():
+        tile_bag = variable.getTilebag()
+        tile_bag_amount = variable.getTilebagamount()
+        frozen = variable.getFrozen()
+        grid_location = variable.getGrid_location()
+        print(f"{grid_location}-grid locations")
+        board_tile_location = [x for x in grid_location if x[0] != 15]
+
+        letter_list  = []
+        for i in board_tile_location :
+            row = i[0]
+            col = i[1]
+            widget = next((w for w in window.grid_slaves(row, col)), None)
+            letter = widget.cget("text")
+            letter_list.append(letter)
+        message = {}
+        message["tile_bag"] = tile_bag
+        message["tile_bag_amount"] = tile_bag_amount
+        message["frozen"] = frozen
+        message["letter_list"] = letter_list
+        message["board_tile_location"] = board_tile_location
+
+        jsonObj = json.dumps(message)
+        return jsonObj
+
+        
+
+
+
+
+
+def send_message():
+
+        message = format_message()
+        client_socket.send(message.encode())
+
+def un_format_message(message):
+    locked_tiles = variable.getLocked_tiles()
+    grid_locations = variable.getGrid_location()
+    tile_bag = message["tile_bag"]
+    variable.setTilebag(tile_bag)
+    variable.setTilebagamount(message["tile_bag_amount"])
+    variable.setFrozen(False)
+
+    letter_list = message["letter_list"]
+    board_tile_location = message["board_tile_location"]
+
+    board_tile_location = [tuple(x) for x in board_tile_location]
+
+    for i in board_tile_location:
+        if i not in grid_locations:
+            grid_locations.append(i)
+
+    for i in range (len(letter_list)):
+        tup = board_tile_location[i]
+        row = tup[0]
+        col = tup[1]
+
+        tile = tk.Label(window, text=letter_list[i], background="white", anchor='center')
+        tile.place(width=CELL_SIZE, height=CELL_SIZE)
+        tile.grid(row = row ,column= col , sticky="nsew",pady=5, padx=5)
+        tile.bind("<Button-1>", drag_start )
+        tile.bind("<B1-Motion>", drag_motion)
+        tile.bind("<ButtonRelease-1>", drop)
+    for i in board_tile_location:
+        
+        #if its not already in locked tiles add that postion into locked_tiles
+        if i not in locked_tiles:
+            locked_tiles.append(i)
+    variable.setLocked_tiles(locked_tiles)
+    variable.setGrid_location(grid_locations)
+    print(f"{grid_locations}-grid locations")
+
+    
+def recieve_message():
+    while True:
+        data = client_socket.recv(1024)
+        data = data.decode()
+        if not data:
+            break
+        print(f"{str(data)}-this is the data") 
+        message = json.loads(data)
+        print(message)
+        un_format_message(message)
+
+
+
+threading.Thread(target=recieve_message).start()
+
+
+
 
 def blank_tile_window(widget):
     def set_letter(letter):
@@ -202,6 +303,8 @@ def point_calculator(word):
 
 #This functionn will check each letter to see if a multiplier is on that tile 
 def check_multipliers(row,col,letter):
+
+    locked_tiles = variable.getLocked_tiles()
 
     #Create a tuple conating the row and col of the letter 
     tup = (row,col)
@@ -504,6 +607,7 @@ def creating_the_words(row,col):
 
 
     print(f"{current_words_str} - curretn strs")
+    print(f"{current_words} -  current words")
     
     return (current_words_str)
 
@@ -642,6 +746,7 @@ def drag_motion(event):
 
 
 def drop(event):
+    locked_tiles = variable.getLocked_tiles()
     #Call the Attribures Grid_Locations and Current_Locations and frozen
     grid_locations = variable.getGrid_location()
     current_locations = variable.getCurrent_location()
@@ -725,6 +830,8 @@ def end_turn():
     up_words = variable.getUp_words()
 
     total_points = variable.getTotal_points()
+    
+    locked_tiles = variable.getLocked_tiles()
 
     widget = next((w for w in window.grid_slaves(0, 17)), None)
     current_points = widget.cget("text")
@@ -773,8 +880,11 @@ def end_turn():
 
     variable.setSide_words_multiplied(x)
 
+    variable.setLocked_tiles(locked_tiles)
+
     #call the check_hand() function to be able to re fill the users hand 
     check_hand()
+    send_message()
 
 
 
