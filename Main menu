@@ -1,0 +1,43 @@
+import tkinter as tk
+from tkinter import *
+main_menu = tk.Tk()
+main_menu.title("Grid")
+main_menu.geometry("1500x1000")
+
+
+
+for i in range(10): # Set minimum size for columns
+    main_menu.rowconfigure(i, weight=1)
+
+
+
+main_menu.columnconfigure(0,weight = 1)
+main_menu.columnconfigure(1,weight = 1)
+main_menu.columnconfigure(2,weight = 2)
+main_menu.columnconfigure(3,weight = 1)
+main_menu.columnconfigure(4,weight = 1)
+for i in range(10):
+	for y in range(5):
+		label = tk.Label(main_menu,bg = "#d9b99b")
+		label.grid(row = i , column = y , sticky ="nsew")
+
+
+
+
+scrabble_label = tk.Label(main_menu,text = "Scrabble",bg = "#d9b99b",font=("Arial", 24))
+scrabble_label.grid(row=0 , column=2 , sticky="nsew")
+
+
+
+host_button = tk.Button(main_menu,text = "Host Game",font=("Arial", 24), bg="white")
+host_button.grid(row=3 , column=2 , sticky="nsew")
+
+
+join_button = tk.Button(main_menu,text = "Join Game",font=("Arial", 24), bg="white")
+join_button.grid(row=5, column =2 , sticky = "nsew")
+
+instructions_button = tk.Button(main_menu,text = "Instructions",font=("Arial", 24), bg="white")
+instructions_button.grid(row=7, column =2 , sticky = "nsew")
+
+
+main_menu.mainloop()
