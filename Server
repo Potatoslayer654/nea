@@ -2,7 +2,7 @@ import socket
 import threading
 
 host = socket.gethostname()
-port = 5001
+port = 5002
 
 sever_socket = socket.socket()
 
@@ -30,5 +30,10 @@ while True:
     conn,address = sever_socket.accept()
     clients.append(conn)
     print(f"connection from {address}")
+    if len(clients) == 1 :
+        data = "1"
+        print("sending 1 ")
+        conn.sendall(data.encode())
+
     
     threading.Thread(target=recieve_message,args=(conn,address)).start()
