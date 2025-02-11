@@ -40,6 +40,7 @@ class ClassToStoreReturnedVariable:
         self.up_words_multiplied = []
         self.total_points = 0
         self.locked_tiles = []
+        self.op_points = 0
     def setFrozen (self, x):
         self.frozen = x
     def getFrozen (self):
@@ -104,15 +105,20 @@ class ClassToStoreReturnedVariable:
         self.locked_tiles = x
     def getLocked_tiles(self):
         return self.locked_tiles
+    def setOp_points(self,x):
+        self.op_points = x
+    def getOp_points(self):
+        return self.op_points
 
 
 variable = ClassToStoreReturnedVariable() 
 
-def format_message():
+def format_message(variable,window):
         tile_bag = variable.getTilebag()
         tile_bag_amount = variable.getTilebagamount()
         frozen = variable.getFrozen()
         grid_location = variable.getGrid_location()
+        total_points = variable.getTotal_points()
         print(f"{grid_location}-grid locations")
         board_tile_location = [x for x in grid_location if x[0] != 15]
 
@@ -129,7 +135,7 @@ def format_message():
         message["frozen"] = frozen
         message["letter_list"] = letter_list
         message["board_tile_location"] = board_tile_location
-
+        message["total_points"] = total_points
         jsonObj = json.dumps(message)
         return jsonObj
 
@@ -139,12 +145,12 @@ def format_message():
 
 
 
-def send_message():
+def send_message(variable,window):
 
-        message = format_message()
+        message = format_message(variable,window)
         client_socket.send(message.encode())
 
-def un_format_message(message,variable,turn_frame):
+def un_format_message(message,variable,window):
     if message == "1":
         variable.setFrozen(False)
         turn_frame.config(bg = "green")
@@ -155,6 +161,7 @@ def un_format_message(message,variable,turn_frame):
     variable.setTilebag(message["tile_bag"])
     variable.setTilebagamount(message["tile_bag_amount"])
     variable.setFrozen(False)
+    variable.setOp_points(message["total_points"])
 
     turn_frame.config(bg = "green")
 
@@ -186,10 +193,12 @@ def un_format_message(message,variable,turn_frame):
     variable.setLocked_tiles(locked_tiles)
     variable.setGrid_location(grid_locations)
     print(f"{grid_locations}-grid locations")
+    op_point.config(text = message["total_points"])
+    
     turn_frame.config(bg = "green")
 
     
-def recieve_message(variable,turn_frame):
+def recieve_message(variable,window):
     while True:
         data = client_socket.recv(1024)
         data = data.decode()
@@ -197,12 +206,12 @@ def recieve_message(variable,turn_frame):
             break
 
         if data == "1":
-            un_format_message(data,variable,turn_frame)
+            un_format_message(data,variable,window)
         else:
             print(f"{str(data)}-this is the data") 
             message = json.loads(data)
             print(message)
-            un_format_message(message,variable,turn_frame)
+            un_format_message(message,variable,window)
 
 
 
@@ -211,7 +220,7 @@ def recieve_message(variable,turn_frame):
 
 
 
-def blank_tile_window(widget):
+def blank_tile_window(widget,window):
     def set_letter(letter):
         widget.config(text=letter)
         blank_window.destroy()
@@ -374,7 +383,7 @@ def check_multipliers(row,col,letter,variable):
 
     
 #This function will check if the action made is legal
-def invalid_play_checker(checker,variable):
+def invalid_play_checker(checker,variable,window):
     
     if checker == False:
         #As the checker is False make the play button red 
@@ -388,7 +397,7 @@ def invalid_play_checker(checker,variable):
         play_button.config(bg = "white")
         
         #As the checker is True the function should be end_turn 
-        play_button.config(command = end_turn(variable))
+        play_button.config(command = lambda :end_turn(variable,window))
         
         
 #This function is called when the user presses the play when the play is invalid  
@@ -408,7 +417,7 @@ def drag_motion(event):
     #This will keep the widget to change and stay with the Pointer on screen
     widget.place(width=CELL_SIZE, height=CELL_SIZE,x=x, y=y)
 
-def word_checker(words,variable):
+def word_checker(words,variable,window):
     print(f"{words}-words")
     checker = False 
     for i in words:
@@ -422,12 +431,12 @@ def word_checker(words,variable):
             break
     if checker == True:
         print("all words are valid")
-        invalid_play_checker(checker,variable)
+        invalid_play_checker(checker,variable,window)
     else:
         print("a word in invalid")
-        invalid_play_checker(checker,variable)
+        invalid_play_checker(checker,variable,window)
         
-def calculate_multiplier(words_pos,variable):
+def calculate_multiplier(words_pos,variable,window):
     #this function will find the multiplier on the current tile and store it as a new variable called multi_word
     print(f"{words_pos}-word_pos")
     multi_word = ""
@@ -480,7 +489,7 @@ def calculate_multiplier(words_pos,variable):
             
         
 
-def creating_the_words(row,col,variable):
+def creating_the_words(row,col,variable,window):
     current_locations = variable.getCurrent_location()
     side_words = variable.getSide_words()
     up_words = variable.getUp_words()
@@ -614,7 +623,7 @@ def creating_the_words(row,col,variable):
         current_word_str = ""
         current_word_pos = []
         
-    calculate_multiplier(current_words_pos,variable)
+    calculate_multiplier(current_words_pos,variable,window)
 
 
     print(f"{current_words_str} - curretn strs")
@@ -625,7 +634,7 @@ def creating_the_words(row,col,variable):
 
 
 #This function will allow users be able to make Tiles green with the mouse 2 button to be able to swap them for other tiles
-def greening_grids(event,variable):
+def greening_grids(event,variable,window):
     #get the attribute from the class storing green grids and the frozen variable as well
     green_grids = variable.getGreen_grids()
     frozen = variable.getFrozen()
@@ -658,7 +667,7 @@ def greening_grids(event,variable):
 
 
 #This function will allow the user to be able to turn a green Tile back into a white one with the mouse 3 button(Scroll wheel button)
-def bleaching_grids(event,variable):
+def bleaching_grids(event,variable,window):
     #get the attribute from the class called green_grids and also get the frozen attribute
     green_grids = variable.getGreen_grids()
     frozen = variable.getFrozen()
@@ -687,7 +696,7 @@ def bleaching_grids(event,variable):
     variable.setGreen_grids(green_grids)
     
 #This function will check around The tile placed and if that move is legal 
-def check_around_tile(row,col,variable):
+def check_around_tile(row,col,variable,window):
     #Get the attributes for both grid_locations and current_locations
     grid_locations = variable.getGrid_location()
     current_locations = variable.getCurrent_location()
@@ -756,7 +765,7 @@ def drag_motion(event):
 
 
 
-def drop(event,arg):
+def drop(event,arg,window):
     variable = arg
     locked_tiles = variable.getLocked_tiles()
     #Call the Attribures Grid_Locations and Current_Locations and frozen
@@ -801,7 +810,7 @@ def drop(event,arg):
                 current_locations.append((new_row,new_col))
                 
                 #Store the result of checking around the tile to see if the move is legal
-                result = check_around_tile(new_row,new_col,variable)
+                result = check_around_tile(new_row,new_col,variable,window)
 
                 
                 #Check if the starting tile has been placed and prevent any tiles being placed until it has been placed
@@ -819,9 +828,9 @@ def drop(event,arg):
                     current_locations.remove(new_tuple)
                 else:
                     if widget.cget("text") == "blank":
-                        blank_tile_window(widget)
-                    current_words = creating_the_words(new_row,new_col,variable)
-                    word_checker(current_words,variable)
+                        blank_tile_window(widget,window)
+                    current_words = creating_the_words(new_row,new_col,variable,window)
+                    word_checker(current_words,variable,window)
             
                     
     #send back to the original position if any requirment is not met
@@ -833,7 +842,7 @@ def drop(event,arg):
     variable.setCurrent_location(current_locations)
 
 #This function will end the users turn by locking the tiles placed , re-filling the users hand and freezing the user so they cant do any moves
-def end_turn(variable):
+def end_turn(variable,window):
     #Call the Attribures Grid_Locations,Side_words,Up_words
     grid_locations = variable.getGrid_location()
 
@@ -900,15 +909,15 @@ def end_turn(variable):
 
 
     #call the check_hand() function to be able to re fill the users hand 
-    check_hand(variable)
-    send_message()
+    check_hand(variable,window)
+    send_message(variable,window)
 
 
 
 
 
 
-def create_tile(empty_grid,variable):
+def create_tile(empty_grid,variable,window):
     grid_locations = variable.getGrid_location()
 
     local_tile_bag_amount = variable.getTilebagamount()
@@ -938,17 +947,15 @@ def create_tile(empty_grid,variable):
 
     tile.bind("<Button-1>", drag_start )
     tile.bind("<B1-Motion>", drag_motion)
-    tile.bind("<ButtonRelease-1>", lambda event, arg=variable: drop(event, arg))
-    tile.bind("<Button-3>",greening_grids)
-    tile.bind("<Button-3>", lambda event, arg=variable: greening_grids(event, arg))
-    tile.bind("<Button-2>",bleaching_grids)
-    tile.bind("<Button-2>", lambda event, arg=variable: bleaching_grids(event, arg))
+    tile.bind("<ButtonRelease-1>", lambda event, arg=variable , arg2 = window: drop(event, arg , window))
+    tile.bind("<Button-3>", lambda event, arg=variable, arg2 = window: greening_grids(event, arg,window))
+    tile.bind("<Button-2>", lambda event, arg=variable, arg2 = window: bleaching_grids(event, arg , window))
 
     variable.setGrid_location(grid_locations)
 
 
 
-def check_hand(variable):
+def check_hand(variable,window):
     grid_locations = variable.getGrid_location()
     x = variable.getTilebagamount()
     for i in range(3,10):
@@ -957,21 +964,21 @@ def check_hand(variable):
                 if x == 0:
                     print("tile bag empty")
                 else:
-                    create_tile(empty_grid,variable)
+                    create_tile(empty_grid,variable,window)
 
 
 
-def start_game(variable):
+def start_game(variable,window):
     for i in range(3,10):
             empty_grid = (15,i)
-            create_tile(empty_grid,variable)
+            create_tile(empty_grid,variable,window)
 
 def unfreeze(variable):
     x = False
     variable.setFrozen(x)     
 
 
-def skip(variable):
+def skip(variable,window):
     grid_locations = variable.getGrid_location()
     for i in (3,9):
         if (15,i) not in grid_locations:
@@ -983,7 +990,7 @@ def skip(variable):
             variable.setFrozen(x)
 
 
-def swap(variable):
+def swap(variable,window):
     green_grids = variable.getGreen_grids()
     local_tile_bag_amount = variable.getTilebagamount()
     local_tile_bag = variable.getTilebag()
@@ -1017,7 +1024,7 @@ def swap(variable):
 
     turn_frame.config(bg = "red")
 
-def recall(variable):
+def recall(variable,window):
     #Call the Attribures current_Locations
     current_locations = variable.getCurrent_location()
     grid_locations = variable.getGrid_location()
@@ -1056,7 +1063,7 @@ def recall(variable):
     variable.setCurrent_location(x)
 
 
-def shuffle(variable):
+def shuffle(variable,window):
     grid_locations = variable.getGrid_location()
     green_grids = variable.getGreen_grids()
 
@@ -1164,17 +1171,17 @@ for i in range(15):
 
 #create hand
 
-swap_button = ttk.Button(window, text="Swap",command = lambda:swap(variable))
+swap_button = ttk.Button(window, text="Swap",command = lambda:swap(variable,window))
 swap_button.place(width=CELL_SIZE, height=CELL_SIZE)
 swap_button.grid(row=15 , column=0 , sticky="nsew")
 
-skip_button = ttk.Button(window , text="Skip",command =lambda:skip(variable))
+skip_button = ttk.Button(window , text="Skip",command =lambda:skip(variable,window))
 skip_button.place(width=CELL_SIZE, height=CELL_SIZE)
 skip_button.grid(row=15 , column=1 , sticky="nsew")
 
                       
 #this button will call the end_turn function
-play_button = tk.Button(window , text="Finish",bg='white',command = lambda:end_turn(variable))
+play_button = tk.Button(window , text="Finish",bg='white',command = lambda:end_turn(variable,window))
 play_button.place(width=CELL_SIZE, height=CELL_SIZE)
 play_button.grid(row=15 , column=14 , sticky="nsew")
 
@@ -1183,11 +1190,11 @@ freeze_button = ttk.Button(window , text="unfreeze",command = lambda:unfreeze(va
 freeze_button.place(width=CELL_SIZE, height=CELL_SIZE)
 freeze_button.grid(row=15 , column=13 , sticky="nsew")
 
-recall_button = ttk.Button(window , text="recall",command = lambda:recall(variable))
+recall_button = ttk.Button(window , text="recall",command = lambda:recall(variable,window))
 recall_button.place(width=CELL_SIZE, height=CELL_SIZE)
 recall_button.grid(row=15 , column=12 , sticky="nsew")
 
-shuffle_button = ttk.Button(window , text="shuffle",command = lambda:shuffle(variable))
+shuffle_button = ttk.Button(window , text="shuffle",command = lambda:shuffle(variable,window))
 shuffle_button.place(width=CELL_SIZE, height=CELL_SIZE)
 shuffle_button.grid(row=15 , column=2 , sticky="nsew")
 
@@ -1200,6 +1207,10 @@ points_button.grid(row=0 , column=17 , sticky="nsew")
 total_point = ttk.Button(window , text="0")
 total_point.place(width=CELL_SIZE, height=CELL_SIZE)
 total_point.grid(row=1 , column=17 , sticky="nsew")
+
+op_point = ttk.Button(window , text="0")
+op_point.place(width=CELL_SIZE, height=CELL_SIZE)
+op_point.grid(row=2 , column=17 , sticky="nsew")
 
 
 current_label = tk.Label(window,text="Current")
@@ -1217,6 +1228,17 @@ total_label.grid(row=1 , column=15 , sticky="nsew")
 points2_label = tk.Label(window,text="points")
 points2_label.place(width=CELL_SIZE, height=CELL_SIZE)
 points2_label.grid(row=1 , column=16 , sticky="nsew")
+
+op_label = tk.Label(window,text="Enemy")
+op_label.place(width=CELL_SIZE, height=CELL_SIZE)
+op_label.grid(row=2 , column=15 , sticky="nsew")
+
+points3_label = tk.Label(window,text="points")
+points3_label.place(width=CELL_SIZE, height=CELL_SIZE)
+points3_label.grid(row=2 , column=16 , sticky="nsew")
+
+
+
 
 Turn_label = tk.Label(window,text="Your")
 Turn_label.place(width=CELL_SIZE, height=CELL_SIZE)
@@ -1242,7 +1264,10 @@ port = 5002
 
 client_socket.connect((host, port))
 
-threading.Thread(target=recieve_message, args=(variable , turn_frame)).start()
+threading.Thread(target=recieve_message, args=(variable , window)).start()
 
-start_game(variable)
+start_game(variable,window)
 window.mainloop()
+
+
+
