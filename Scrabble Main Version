@@ -41,6 +41,7 @@ class ClassToStoreReturnedVariable:
         self.total_points = 0
         self.locked_tiles = []
         self.op_points = 0
+        self.skipped_turns =  0
     def setFrozen (self, x):
         self.frozen = x
     def getFrozen (self):
@@ -109,17 +110,68 @@ class ClassToStoreReturnedVariable:
         self.op_points = x
     def getOp_points(self):
         return self.op_points
+    def setSkipped_turns(self,x):
+        self.skipped_turns = x
+    def getSkipped_tunrs(self):
+        return self.skipped_turns
 
 
 variable = ClassToStoreReturnedVariable() 
+def end_game(variable,window):
+    variable.setFrozen(True)
+
+    your_points = variable.getTotal_points()
+    enemy_points = variable.getOp_points()
+
+
+    end_window = tk.Tk()
+    end_window.title("End of Game")
+    end_window.geometry("500x750")
+
+    end_window.columnconfigure(0,weight = 1)
+
+    for i in range(3):
+        end_window.rowconfigure(i,weight = 1)
+
+
+    points_label = tk.Label(end_window,text = f"your points : {your_points}",bg = "#98F5FF",font=("Arial", 24))
+    points_label.grid(row=0, column=0 , sticky="nsew")
+
+    enemy_label = tk.Label(end_window,text = f"opponent points : {enemy_points}",bg = "#8EE5EE",font=("Arial", 24))
+    enemy_label.grid(row=1, column=0 , sticky="nsew")
+
+    winner = ""
+
+    if your_points > enemy_points:
+        winner = "Win"
+    elif your_points == enemy_points:
+        winner = "Draw"
+    else:
+        winner = "Lose"
+
+    winner_label = tk.Label(end_window,text = f"You {winner}",bg = "#7AC5CD",font=("Arial", 24))
+    winner_label.grid(row=2, column=0 , sticky="nsew")
+
+    end_window.mainloop()
+
+    
+
+
+
 
 def format_message(variable,window):
+        checker = False
+        skipped_turns = variable.getSkipped_tunrs()
         tile_bag = variable.getTilebag()
         tile_bag_amount = variable.getTilebagamount()
         frozen = variable.getFrozen()
         grid_location = variable.getGrid_location()
         total_points = variable.getTotal_points()
+
+
         print(f"{grid_location}-grid locations")
+
+
         board_tile_location = [x for x in grid_location if x[0] != 15]
 
         letter_list  = []
@@ -129,6 +181,8 @@ def format_message(variable,window):
             widget = next((w for w in window.grid_slaves(row, col)), None)
             letter = widget.cget("text")
             letter_list.append(letter)
+
+
         message = {}
         message["tile_bag"] = tile_bag
         message["tile_bag_amount"] = tile_bag_amount
@@ -136,8 +190,13 @@ def format_message(variable,window):
         message["letter_list"] = letter_list
         message["board_tile_location"] = board_tile_location
         message["total_points"] = total_points
+        message["skipped_turns"] = skipped_turns
+
+        if skipped_turns == 3 or tile_bag_amount == 0:
+            checker = True
+
         jsonObj = json.dumps(message)
-        return jsonObj
+        return jsonObj,checker
 
         
 
@@ -147,8 +206,10 @@ def format_message(variable,window):
 
 def send_message(variable,window):
 
-        message = format_message(variable,window)
+        message,checker = format_message(variable,window)
         client_socket.send(message.encode())
+        if checker == True:
+            end_game(variable,window)
 
 def un_format_message(message,variable,window):
     if message == "1":
@@ -170,32 +231,36 @@ def un_format_message(message,variable,window):
 
     board_tile_location = [tuple(x) for x in board_tile_location]
 
-    for i in board_tile_location:
-        if i not in grid_locations:
-            grid_locations.append(i)
+
 
     for i in range (len(letter_list)):
-        tup = board_tile_location[i]
-        row = tup[0]
-        col = tup[1]
+        if board_tile_location[i] not in grid_locations:
+            grid_locations.append(board_tile_location[i])
+            tup = board_tile_location[i]
+            row = tup[0]
+            col = tup[1]
 
-        tile = tk.Label(window, text=letter_list[i], background="white", anchor='center')
-        tile.place(width=CELL_SIZE, height=CELL_SIZE)
-        tile.grid(row = row ,column= col , sticky="nsew",pady=5, padx=5)
-        tile.bind("<Button-1>", drag_start )
-        tile.bind("<B1-Motion>", drag_motion)
-        tile.bind("<ButtonRelease-1>", drop)
+            tile = tk.Label(window, text=letter_list[i], background="white", anchor='center')
+            tile.place(width=CELL_SIZE, height=CELL_SIZE)
+            tile.grid(row = row ,column= col , sticky="nsew",pady=5, padx=5)
     for i in board_tile_location:
         
         #if its not already in locked tiles add that postion into locked_tiles
         if i not in locked_tiles:
             locked_tiles.append(i)
+
+
     variable.setLocked_tiles(locked_tiles)
     variable.setGrid_location(grid_locations)
     print(f"{grid_locations}-grid locations")
     op_point.config(text = message["total_points"])
     
     turn_frame.config(bg = "green")
+
+    skipped_turns = message["skipped_turns"]
+    variable.setSkipped_turns(skipped_turns)
+    if skipped_turns == 3 or message["tile_bag_amount"] == 0:
+        end_game(variable,window)
 
     
 def recieve_message(variable,window):
@@ -905,6 +970,8 @@ def end_turn(variable,window):
 
     variable.setCurrent_location(x)
 
+    variable.setSkipped_turns(0)
+
     variable.setLocked_tiles(locked_tiles)
 
 
@@ -980,14 +1047,22 @@ def unfreeze(variable):
 
 def skip(variable,window):
     grid_locations = variable.getGrid_location()
+    skipped_turns = variable.getSkipped_tunrs()
+    legal_checker = False
     for i in (3,9):
         if (15,i) not in grid_locations:
             print("Cannot skip as tiles are on the board")
+            legal_checker = False
             break
         else:
+            legal_checker = True
             turn_frame.config(bg = "red")
             x = True
             variable.setFrozen(x)
+    if legal_checker == True:
+        skipped_turns = skipped_turns + 1
+        variable.setSkipped_turns(skipped_turns)
+        send_message(variable,window)
 
 
 def swap(variable,window):
@@ -1021,8 +1096,11 @@ def swap(variable,window):
     variable.setGreen_grids(green_grids)
     variable.setTilebag(local_tile_bag)
     variable.setTilebagamount(local_tile_bag_amount)
+    variable.setSkipped_turns(0)
 
     turn_frame.config(bg = "red")
+
+    send_message(variable,window)
 
 def recall(variable,window):
     #Call the Attribures current_Locations
@@ -1268,6 +1346,5 @@ threading.Thread(target=recieve_message, args=(variable , window)).start()
 
 start_game(variable,window)
 window.mainloop()
-
 
 
