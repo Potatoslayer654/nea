@@ -7,55 +7,61 @@ import copy
 import socket
 import threading
 import json
-from functools import partial
 #This class is used to call variables needed to be used in functions and need to be changed globally
 
 
-
+#Function will create the end screen page when the game has ended
 def end_game(variable,window):
+    #Freeze the game to prevent the user from doing any actions
     variable.setFrozen(True)
-
+    
+    #Get your Total points and your opponents
     your_points = variable.getTotal_points()
     enemy_points = variable.getOp_points()
 
-
+    #Create the end game window
     end_window = tk.Tk()
     end_window.title("End of Game")
     end_window.geometry("500x750")
-
+    
+    #Create the grid with 1 column
     end_window.columnconfigure(0,weight = 1)
-
+    
+    #Create the grid with 3 rows
     for i in range(3):
         end_window.rowconfigure(i,weight = 1)
 
-
+    #Output your total points on the top row 
     points_label = tk.Label(end_window,text = f"your points : {your_points}",bg = "#98F5FF",font=("Arial", 24))
     points_label.grid(row=0, column=0 , sticky="nsew")
-
+    
+    #Output your opponents points on the middle row 
     enemy_label = tk.Label(end_window,text = f"opponent points : {enemy_points}",bg = "#8EE5EE",font=("Arial", 24))
     enemy_label.grid(row=1, column=0 , sticky="nsew")
-
+    
+    #Check if you or your opponents has more points and decides if you win , lose or draw
     winner = ""
-
     if your_points > enemy_points:
         winner = "Win"
     elif your_points == enemy_points:
         winner = "Draw"
     else:
         winner = "Lose"
-
+    
+    #Output if you won or lost
     winner_label = tk.Label(end_window,text = f"You {winner}",bg = "#7AC5CD",font=("Arial", 24))
     winner_label.grid(row=2, column=0 , sticky="nsew")
-
+    
     end_window.mainloop()
 
     
 
 
 
-
+#Format the message which needs to be sent to the other client into a json file as well as check if any ending game functions have been met 
 def format_message(variable,window):
         checker = False
+        #Call variables from the variable class
         skipped_turns = variable.getSkipped_tunrs()
         tile_bag = variable.getTilebag()
         tile_bag_amount = variable.getTilebagamount()
@@ -66,9 +72,10 @@ def format_message(variable,window):
 
         print(f"{grid_location}-grid locations")
 
-
+        #Store locations which are not in row 15 as board_tile_locations
         board_tile_location = [x for x in grid_location if x[0] != 15]
-
+        
+        #Find the Letter in each position stored in board_tile_locations and store it in Letter_list
         letter_list  = []
         for i in board_tile_location :
             row = i[0]
@@ -77,7 +84,7 @@ def format_message(variable,window):
             letter = widget.cget("text")
             letter_list.append(letter)
 
-
+        #Create dictionary with all the variables which need to be send to the other client 
         message = {}
         message["tile_bag"] = tile_bag
         message["tile_bag_amount"] = tile_bag_amount
@@ -87,10 +94,16 @@ def format_message(variable,window):
         message["total_points"] = total_points
         message["skipped_turns"] = skipped_turns
 
-        if skipped_turns == 3 or tile_bag_amount == 0:
-            checker = True
 
+        #Checks if any of the ending game conditions been met 
+        if skipped_turns == 3 or tile_bag_amount == 0:
+            #if they have set checker as True
+            checker = True
+            
+        #store the message as a json object with the name jsonObj
         jsonObj = json.dumps(message)
+        
+        #return the message as a json object and the checker which signals it is the end of the game
         return jsonObj,checker
 
         
@@ -98,85 +111,146 @@ def format_message(variable,window):
 
 
 
-
+#Function to send data to the other client by sending it to the sever 
 def send_message(variable,window):
+        #Get the client_socket variable from the class
         client_socket = variable.getClient_socket()
+        
+        #Format the message to a json file to send to the sever and other client as well check if any ending game conditions have been met
         message,checker = format_message(variable,window)
+        
+        #Send the json file to the sever
         client_socket.send(message.encode())
+        
+        #Call the end_game function if any game ending conditions have been met
         if checker == True:
             end_game(variable,window)
 
+#Function to unpackage the message sent from the sever 
 def un_format_message(message,variable,window):
-    CELL_SIZE = 50 
+    #Set the size of tiles made to 50 
+    CELL_SIZE = 50
+    
+    #Check if the message recived is just 1 , which means it is the first client to connect to the sever so it is able to start 
     if message == "1":
+        
+        #Allow the user to start the game
         variable.setFrozen(False)
+        
+        #get the widget information of turn indicator frame
         turn_frame = next((w for w in window.grid_slaves(5,17)), None)
-        turn_frame.config(bg = "green")
-        return
 
+        #change the turn indicator frame to green to indicate that it is the users turn
+        turn_frame.config(bg = "green")
+        
+        #end the function here as no other information was sent
+        return
+    
+    #Get the variables from the variable class
     locked_tiles = variable.getLocked_tiles()
     grid_locations = variable.getGrid_location()
+    
+    #Set the recieved data from the sever to the current games info like the tile bag, tile bag amount ,  enemies points and unfreeze the board for the user 
     variable.setTilebag(message["tile_bag"])
     variable.setTilebagamount(message["tile_bag_amount"])
     variable.setFrozen(False)
     variable.setOp_points(message["total_points"])
     
+    #get the widget information of turn indictor frame
     turn_frame = next((w for w in window.grid_slaves(5,17)), None)
+    
+    #change the turn indicator frame to green to indicate that it is the users turn
     turn_frame.config(bg = "green")
-
+    
+    #set the data letter_list and board_tile_location as variables 
     letter_list = message["letter_list"]
     board_tile_location = message["board_tile_location"]
-
+    
+    #Make the data in board_tile_location are in tuples 
     board_tile_location = [tuple(x) for x in board_tile_location]
 
 
-
+    #Go through each location in the lettet_list 
     for i in range (len(letter_list)):
+        
+        #Check if that letter is already on the board by checking if its location is already in grid_locations
         if board_tile_location[i] not in grid_locations:
+            
+            #Add this new locations to grid_locations as its not in it  
             grid_locations.append(board_tile_location[i])
+            
+            #get the tuple locations of the letter currently being checked
             tup = board_tile_location[i]
+            
+            #store the row and col of the location seperate to the tuple
             row = tup[0]
             col = tup[1]
-
+            
+            #Create a label with the current letter and place it in the position it is in the other clients board 
             tile = tk.Label(window, text=letter_list[i], background="white", anchor='center')
             tile.place(width=CELL_SIZE, height=CELL_SIZE)
             tile.grid(row = row ,column= col , sticky="nsew",pady=5, padx=5)
+            
+    #check through each location in board_tile_location
     for i in board_tile_location:
         
         #if its not already in locked tiles add that postion into locked_tiles
         if i not in locked_tiles:
             locked_tiles.append(i)
 
-
+    #Set locked_tile and grid_locations after comparing to the other clients one and adding new positions
     variable.setLocked_tiles(locked_tiles)
     variable.setGrid_location(grid_locations)
+    
     print(f"{grid_locations}-grid locations")
     
+    #Get the widget information of the button op_point
     op_point = next((w for w in window.grid_slaves(2,17)), None)
+    
+    #Change the score displayed in op_point with the opponents new amount of points
     op_point.config(text = message["total_points"])
     
-    turn_frame.config(bg = "green")
 
+    #Store the skipped_turn variable from the user 
     skipped_turns = message["skipped_turns"]
+    
+    #Set the skipped_turn value from the opponents as the new skipped_turn value for this client
     variable.setSkipped_turns(skipped_turns)
+    
+    #check if any ending game conditions have been met
     if skipped_turns == 3 or message["tile_bag_amount"] == 0:
+        #if met call the end_game function to the end that game
         end_game(variable,window)
 
     
 def recieve_message(variable,window):
+    #get the client_socket from the variable class
     client_socket = variable.getClient_socket()
+    
+    #On loop attempt to recieve data from the sever 
     while True:
+        #recieve data from the sever
         data = client_socket.recv(1024)
+        
+        #decode the data from bytes to a string
         data = data.decode()
+        
+        #end the loop if there is not data recieved
         if not data:
             break
-
+        #check if data is 1 , which means it the first client to connect to the sever and is able to start the game .
         if data == "1":
+            #call the un_format_message function to unpackage the data sent
             un_format_message(data,variable,window)
         else:
-            print(f"{str(data)}-this is the data") 
+            print(f"{str(data)}-this is the data")
+            
+            #As the data is not 1 the data will be a json file and will need to be loaded to become a dictionary
             message = json.loads(data)
+            
             print(message)
+            
+            #call the un_format_message function to unpackage the data sent
             un_format_message(message,variable,window)
 
 
@@ -187,25 +261,37 @@ def recieve_message(variable,window):
 
 
 def blank_tile_window(widget,window):
-    CELL_SIZE = 50 
+    #Set the size of tiles made to 50 
+    CELL_SIZE = 50
+    #function to set the tiles text to be the letter the user has picked from the blank_window screen
     def set_letter(letter):
+        
         widget.config(text=letter)
+        
+        #destroyes the blank_window after the tile has been changed letter as it no longer useful
         blank_window.destroy()
 
-
+    #Create the blank_window with the Toplevel as window to allow communication between the two windows
     blank_window = tk.Toplevel(window)
     blank_window.title("Choose a Letter as your blank tile")
     blank_window.geometry("250x300")
-
-    for i in range(6): # Set minimum size for columns
+    
+    #Create 6 rows in the blank_window screen
+    for i in range(6): 
         blank_window.rowconfigure(i, weight=1, minsize=CELL_SIZE) # Set minimum size for rows
+        
+    #Create 5 cols in the blank_window screen
     for i in range(5):
         blank_window.columnconfigure(i, weight=1, minsize=CELL_SIZE)   # Set minimum size for columns
-
+        
+    #Create the string of all letters the user can choose from 
     letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
+    
+    #Go through each letter in letter and place it in a row left to right , up to down in the grids as buttons
     for i, letter in enumerate(letters):
+        #Set the buttons function as set_letter to allow the user to chose the the letter of the blank tile 
         button = tk.Button(blank_window, text=letter, command=lambda l=letter: set_letter(l))
+        
         button.place(width=CELL_SIZE, height=CELL_SIZE)
         button.grid(row=i//5, column=i%5,sticky = "nsew")
 
@@ -382,19 +468,37 @@ def invalid_input():
 
 def word_checker(words,variable,window):
     print(f"{words}-words")
-    checker = False 
+    
+    checker = False
+    
+    #Go through each word in the list words
     for i in words:
+        
+        #make each word a string if it isnt already
         word = "".join(i)
+        
+        #Set the string characters as all lower case
         word = word.lower()
+        
+        #Check if the word is valid word with the dictionary api
         response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}")
+        
+        #Check if there was valid response or not
+        #A respone of 200 means there is a valid response anything else means its invalid
         if response.status_code == 200:
+            #Set checker as True if there is a valid response
             checker = True
         else:
+            #set checker as False 
             checker = False
+            #Break the look as if one word in the words list is invalid the turn is illegal
             break
+    #If true indicates to the user the turn is valid as well as sets the play button to call the end turn function
     if checker == True:
         print("all words are valid")
         invalid_play_checker(checker,variable,window)
+    
+    #If False indicates to the user the turn is invalid and sets the play button to call the invalid play function 
     else:
         print("a word in invalid")
         invalid_play_checker(checker,variable,window)
@@ -1366,4 +1470,3 @@ def scrabble_game():
     
 if __name__ == "__main__":
     scrabble_game()
-
