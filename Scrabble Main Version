@@ -8,14 +8,6 @@ import socket
 import threading
 import json
 from functools import partial
-CELL_SIZE = 50      # size of each grid cell in pixels
-colour_list = []    
-colours = ["#F9E4BC", '#895129'] # colours for the board 
-board_tile_location = [] # location of all tiles on the 15x15 board
-colours_hand = ["#1E90FF","#6495ED","#4863A0","#79BAEC",'#95B9C7', '#36454F'] # colours for the hand labels
-score = {letter: score for letter, score in zip(
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ", [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10])}
-
 #This class is used to call variables needed to be used in functions and need to be changed globally
 class ClassToStoreReturnedVariable:
     def __init__ (self):
@@ -42,6 +34,7 @@ class ClassToStoreReturnedVariable:
         self.locked_tiles = []
         self.op_points = 0
         self.skipped_turns =  0
+        self.client_socket = ""
     def setFrozen (self, x):
         self.frozen = x
     def getFrozen (self):
@@ -114,9 +107,16 @@ class ClassToStoreReturnedVariable:
         self.skipped_turns = x
     def getSkipped_tunrs(self):
         return self.skipped_turns
+    def setClient_socket(self,x):
+        self.client_socket = x
+    def getClient_socket(self):
+        return self.client_socket
 
 
-variable = ClassToStoreReturnedVariable() 
+variable = ClassToStoreReturnedVariable()
+
+
+
 def end_game(variable,window):
     variable.setFrozen(True)
 
@@ -205,15 +205,17 @@ def format_message(variable,window):
 
 
 def send_message(variable,window):
-
+        client_socket = variable.getClient_socket()
         message,checker = format_message(variable,window)
         client_socket.send(message.encode())
         if checker == True:
             end_game(variable,window)
 
 def un_format_message(message,variable,window):
+    CELL_SIZE = 50 
     if message == "1":
         variable.setFrozen(False)
+        turn_frame = next((w for w in window.grid_slaves(5,17)), None)
         turn_frame.config(bg = "green")
         return
 
@@ -223,7 +225,8 @@ def un_format_message(message,variable,window):
     variable.setTilebagamount(message["tile_bag_amount"])
     variable.setFrozen(False)
     variable.setOp_points(message["total_points"])
-
+    
+    turn_frame = next((w for w in window.grid_slaves(5,17)), None)
     turn_frame.config(bg = "green")
 
     letter_list = message["letter_list"]
@@ -253,6 +256,8 @@ def un_format_message(message,variable,window):
     variable.setLocked_tiles(locked_tiles)
     variable.setGrid_location(grid_locations)
     print(f"{grid_locations}-grid locations")
+    
+    op_point = next((w for w in window.grid_slaves(2,17)), None)
     op_point.config(text = message["total_points"])
     
     turn_frame.config(bg = "green")
@@ -264,6 +269,7 @@ def un_format_message(message,variable,window):
 
     
 def recieve_message(variable,window):
+    client_socket = variable.getClient_socket()
     while True:
         data = client_socket.recv(1024)
         data = data.decode()
@@ -286,6 +292,7 @@ def recieve_message(variable,window):
 
 
 def blank_tile_window(widget,window):
+    CELL_SIZE = 50 
     def set_letter(letter):
         widget.config(text=letter)
         blank_window.destroy()
@@ -310,6 +317,8 @@ def blank_tile_window(widget,window):
 
 #This function will calculate the amount of points a word will have with multiplier accounted for 
 def point_calculator(word):
+    score = {letter: score for letter, score in zip(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ", [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10])}
     #Make all the letters uppercase
     word = word.upper()
     
@@ -385,7 +394,11 @@ def point_calculator(word):
 def check_multipliers(row,col,letter,variable):
 
     locked_tiles = variable.getLocked_tiles()
-
+    triple_words = variable.getTriple_words()
+    double_words = variable.getDouble_words()
+    triple_letters = variable.getTriple_letters()
+    double_letters = variable.getDouble_letters()
+    
     #Create a tuple conating the row and col of the letter 
     tup = (row,col)
     
@@ -449,6 +462,7 @@ def check_multipliers(row,col,letter,variable):
     
 #This function will check if the action made is legal
 def invalid_play_checker(checker,variable,window):
+    play_button = next((w for w in window.grid_slaves(15, 14)), None)
     
     if checker == False:
         #As the checker is False make the play button red 
@@ -470,17 +484,6 @@ def invalid_input():
     
     print("invalid play")
 
-
-#This will keep the Tile stuck to the mouse while the mouse 1 button is being held
-def drag_motion(event):
-    widget = event.widget
-    
-    #Calculates the current position of the Tile in terms of (x,y) 
-    x = widget.winfo_x() - widget.startX + event.x
-    y = widget.winfo_y() - widget.startY + event.y
-    
-    #This will keep the widget to change and stay with the Pointer on screen
-    widget.place(width=CELL_SIZE, height=CELL_SIZE,x=x, y=y)
 
 def word_checker(words,variable,window):
     print(f"{words}-words")
@@ -537,7 +540,8 @@ def calculate_multiplier(words_pos,variable,window):
     for word in multi_list:
         word_points = point_calculator(word)
         current_points = current_points + word_points
-    points_button.config(text = current_points)
+    widget = next((w for w in window.grid_slaves(0,17)), None)    
+    widget.config(text = current_points)
 
     #Stores the Total_points as the points the player currently has
     total_points = variable.getTotal_points()
@@ -819,6 +823,7 @@ def drag_start(event):
 
 #This will keep the Tile stuck to the mouse while the mouse 1 button is being held
 def drag_motion(event):
+    CELL_SIZE = 50 
     widget = event.widget
     
     #Calculates the current position of the Tile in terms of (x,y) 
@@ -831,6 +836,7 @@ def drag_motion(event):
 
 
 def drop(event,arg,window):
+    CELL_SIZE = 50 
     variable = arg
     locked_tiles = variable.getLocked_tiles()
     #Call the Attribures Grid_Locations and Current_Locations and frozen
@@ -921,19 +927,15 @@ def end_turn(variable,window):
 
     widget = next((w for w in window.grid_slaves(0, 17)), None)
     current_points = widget.cget("text")
+    
     total_points = total_points + int(current_points)
+    
+    total_point = next((w for w in window.grid_slaves(1, 17)), None)
     total_point.config(text = str(total_points))
 
     variable.setTotal_points(total_points)
     #check the location of each tile within grid_locaitons
-    for i in grid_locations:
-        
-        #Check if that tile is not part of the users hand (any tile in row 15)
-        #check if it is not already in the board_tile_location
-        if i[0] != 15 and i not in board_tile_location:
-            
-            #add this postion to the variable board_tile_location
-            board_tile_location.append(i)
+    board_tile_location = [x for x in grid_locations if x[0] != 15]
             
     #look at each location in board_tile_location
     for i in board_tile_location:
@@ -945,12 +947,13 @@ def end_turn(variable,window):
     #The turn has ended so the user should be frozen so set the attribure frozen to True
     x = True
     variable.setFrozen(x)
-
+    turn_frame = next((w for w in window.grid_slaves(5,17)), None)
     turn_frame.config(bg = "red")
     
 
         
     #Set the points button to 0
+    points_button = next((w for w in window.grid_slaves(0,17)), None)
     points_button.config(text = "0")
 
 
@@ -985,6 +988,7 @@ def end_turn(variable,window):
 
 
 def create_tile(empty_grid,variable,window):
+    CELL_SIZE = 50 
     grid_locations = variable.getGrid_location()
 
     local_tile_bag_amount = variable.getTilebagamount()
@@ -1056,6 +1060,7 @@ def skip(variable,window):
             break
         else:
             legal_checker = True
+            turn_frame = next((w for w in window.grid_slaves(5,17)), None) 
             turn_frame.config(bg = "red")
             x = True
             variable.setFrozen(x)
@@ -1097,7 +1102,7 @@ def swap(variable,window):
     variable.setTilebag(local_tile_bag)
     variable.setTilebagamount(local_tile_bag_amount)
     variable.setSkipped_turns(0)
-
+    turn_frame =  next((w for w in window.grid_slaves(5,17)), None)
     turn_frame.config(bg = "red")
 
     send_message(variable,window)
@@ -1182,169 +1187,286 @@ def shuffle(variable,window):
 
 
 
+def main():
+    class ClassToStoreReturnedVariable:
+        def __init__ (self):
+            self.frozen = True
+            self.tile_bag = (
+            ["A"] * 9 + ["B"] * 2 + ["C"] * 2 + ["D"] * 4 + ["E"] * 12 +
+            ["F"] * 2 + ["G"] * 3 + ["H"] * 2 + ["I"] * 9 + ["J"] * 1 +
+            ["K"] * 1 + ["L"] * 4 + ["M"] * 2 + ["N"] * 6 + ["O"] * 8 +
+            ["P"] * 2 + ["Q"] * 1 + ["R"] * 6 + ["S"] * 4 + ["T"] * 6 +
+            ["U"] * 4 + ["V"] * 2 + ["W"] * 2 + ["X"] * 1 + ["Y"] * 2 + ["Z"] * 1 + ["blank"] * 2)
+            self.tile_bag_amount = 100
+            self.green_grids = []
+            self.grid_locations =[]
+            self.current_locations = []
+            self.side_words = []
+            self.up_words = []
+            self.triple_words = [(0,0),(7,0),(14,0),(0,7),(14,7),(0,14),(7,14),(14,14)]
+            self.double_words = [(1,1),(2,2),(3,3),(4,4),(1,13),(2,12),(3,11),(4,10),(13,1),(12,2),(11,3),(10,4),(13,13),(12,12),(11,11),(10,10),(7,7)]
+            self.triple_letters =[(1,5),(1,9),(5,1),(5,5),(5,9),(5,13),(9,1),(9,5),(9,9),(9,13),(13,5),(13,9)]
+            self.double_letters = [(0, 3),(0, 11),(2, 6),(2, 8),(3, 0),(3, 7),(3, 14),(6, 2),(6, 6),(6, 8),(6, 12),(7, 3),(7, 11),(8, 2),(8, 6),(8, 8),(8, 12),(11, 0),(11, 7),(11, 14),(12, 6),(12, 8),(14, 3),  (14, 11)]
+            self.side_words_multiplied = []   
+            self.up_words_multiplied = []
+            self.total_points = 0
+            self.locked_tiles = []
+            self.op_points = 0
+            self.skipped_turns =  0
+            self.client_socket = ""
+        def setFrozen (self, x):
+            self.frozen = x
+        def getFrozen (self):
+            return self.frozen
+        def setTilebag(self,x):
+            self.tile_bag = x
+        def getTilebag(self):
+            return self.tile_bag
+        def setTilebagamount(self,x):
+            self.tile_bag_amount = x
+        def getTilebagamount(self):
+            return self.tile_bag_amount
+        def setGreen_grids(self,x):
+            self.green_grids = x
+        def getGreen_grids(self):
+            return self.green_grids
+        def setGrid_location(self,x):
+            self.grid_locations = x
+        def getGrid_location(self):
+            return self.grid_locations
+        def setCurrent_location(self,x):
+            self.current_locations = x
+        def getCurrent_location(self):
+            return self.current_locations
+        def setUp_words(self,x):
+            self.up_words = x
+        def getUp_words(self):
+            return self.up_words
+        def setSide_words(self,x):
+            self.side_words = x
+        def getSide_words(self):
+            return self.side_words
+        def setUp_words_multiplied(self,x):
+            self.up_words_multiplied = x
+        def getUp_words_multiplied(self):
+            return self.up_words_multiplied
+        def setSide_words_multiplied(self,x):
+            self.side_words_multiplied = x
+        def getSide_words_multiplied(self):
+            return self.side_words_multiplied
+        def setTriple_words(self,x):
+             self.triple_words = x
+        def getTriple_words(self):
+            return self.triple_words
+        def setDouble_words(self,x):
+            self.double_words = x
+        def getDouble_words(self):
+            return self.double_words
+        def setTriple_letters(self,x):
+            self.triple_letters = x
+        def getTriple_letters(self):
+            return self.triple_letters
+        def setDouble_letters(self,x):
+            self.double_letters = x
+        def getDouble_letters(self):
+            return self.double_letters
+        def setTotal_points(self,x):
+            self.total_points = x
+        def getTotal_points(self):
+            return self.total_points
+        def setLocked_tiles(self,x):
+            self.locked_tiles = x
+        def getLocked_tiles(self):
+            return self.locked_tiles
+        def setOp_points(self,x):
+            self.op_points = x
+        def getOp_points(self):
+            return self.op_points
+        def setSkipped_turns(self,x):
+            self.skipped_turns = x
+        def getSkipped_tunrs(self):
+            return self.skipped_turns
+        def setClient_socket(self,x):
+            self.client_socket = x
+        def getClient_socket(self):
+            return self.client_socket
 
 
-window = tk.Tk()
-window.title("Grid")
-window.geometry("900x800")
-
-print(window.winfo_screenwidth())
-
-# Configure the grid to have fixed cell sizes
-for i in range(16): # Set minimum size for columns
-    window.rowconfigure(i, weight=1, minsize=CELL_SIZE) # Set minimum size for rows
-for i in range(18):
-    window.columnconfigure(i, weight=1, minsize=CELL_SIZE)   # Set minimum size for columns
+    variable = ClassToStoreReturnedVariable()
+    CELL_SIZE = 50      # size of each grid cell in pixels
+    colour_list = []    
+    colours = ["#F9E4BC", '#895129'] # colours for the board 
+    board_tile_location = [] # location of all tiles on the 15x15 board
+    colours_hand = ["#1E90FF","#6495ED","#4863A0","#79BAEC",'#95B9C7', '#36454F'] # colours for the hand labels
+    score = {letter: score for letter, score in zip(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ", [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10])}
 
 
 
-#Create Background colour for the grid
+    window = tk.Tk()
+    window.title("Grid")
+    window.geometry("900x800")
 
-double_words = variable.getDouble_words()
-triple_words = variable.getTriple_words()
-double_letters = variable.getDouble_letters()
-triple_letters = variable.getTriple_letters()
+    print(window.winfo_screenwidth())
+
+    # Configure the grid to have fixed cell sizes
+    for i in range(16): # Set minimum size for columns
+        window.rowconfigure(i, weight=1, minsize=CELL_SIZE) # Set minimum size for rows
+    for i in range(18):
+        window.columnconfigure(i, weight=1, minsize=CELL_SIZE)   # Set minimum size for columns
+
+
+
+    #Create Background colour for the grid
+
+    double_words = variable.getDouble_words()
+    triple_words = variable.getTriple_words()
+    double_letters = variable.getDouble_letters()
+    triple_letters = variable.getTriple_letters()
 
 
 
 
-frame = tk.Frame(window, bg=random.choice(colours))
-frame.place(width=CELL_SIZE, height=CELL_SIZE) 
-for i in range(15):
-    for j in range(15):
-        bg = random.choice(colours)
-        if len(colour_list) != 0:
-            while bg == colour_list[-1]:
-                bg = random.choice(colours)
-            if len(colour_list) > 15:
-                while bg == colour_list[-15]:
+    frame = tk.Frame(window, bg=random.choice(colours))
+    frame.place(width=CELL_SIZE, height=CELL_SIZE) 
+    for i in range(15):
+        for j in range(15):
+            bg = random.choice(colours)
+            if len(colour_list) != 0:
+                while bg == colour_list[-1]:
                     bg = random.choice(colours)
+                if len(colour_list) > 15:
+                    while bg == colour_list[-15]:
+                        bg = random.choice(colours)
 
 
 
-        colour_list.append(bg)
-        frame = tk.Frame(window, bg=bg)
-        tup = (i,j)
-        frame.place(width=CELL_SIZE, height=CELL_SIZE)
-        if i == 7 and j == 7:
-            frame = tk.Frame(window, bg="black")
-            frame.grid(row=i, column=j, sticky="nsew")
-        elif tup in triple_words:
-            frame = tk.Frame(window, bg="#9b2948")
-            frame.grid(row=i, column=j, sticky="nsew")
-        elif tup in double_words:
-            frame = tk.Frame(window, bg="#ff7251")
-            frame.grid(row=i, column=j, sticky="nsew")
-        elif tup in triple_letters:
-            frame = tk.Frame(window, bg="#ffca7b")
-            frame.grid(row=i, column=j, sticky="nsew")
-        elif tup in double_letters:
-            frame = tk.Frame(window, bg="#CD661D")
-            frame.grid(row=i, column=j, sticky="nsew")
-        else:
-            frame.grid(row=i, column=j, sticky="nsew")
+            colour_list.append(bg)
+            frame = tk.Frame(window, bg=bg)
+            tup = (i,j)
+            frame.place(width=CELL_SIZE, height=CELL_SIZE)
+            if i == 7 and j == 7:
+                frame = tk.Frame(window, bg="black")
+                frame.grid(row=i, column=j, sticky="nsew")
+            elif tup in triple_words:
+                frame = tk.Frame(window, bg="#9b2948")
+                frame.grid(row=i, column=j, sticky="nsew")
+            elif tup in double_words:
+                frame = tk.Frame(window, bg="#ff7251")
+                frame.grid(row=i, column=j, sticky="nsew")
+            elif tup in triple_letters:
+                frame = tk.Frame(window, bg="#ffca7b")
+                frame.grid(row=i, column=j, sticky="nsew")
+            elif tup in double_letters:
+                frame = tk.Frame(window, bg="#CD661D")
+                frame.grid(row=i, column=j, sticky="nsew")
+            else:
+                frame.grid(row=i, column=j, sticky="nsew")
 
-      
-
-
-#create hand
-
-swap_button = ttk.Button(window, text="Swap",command = lambda:swap(variable,window))
-swap_button.place(width=CELL_SIZE, height=CELL_SIZE)
-swap_button.grid(row=15 , column=0 , sticky="nsew")
-
-skip_button = ttk.Button(window , text="Skip",command =lambda:skip(variable,window))
-skip_button.place(width=CELL_SIZE, height=CELL_SIZE)
-skip_button.grid(row=15 , column=1 , sticky="nsew")
-
-                      
-#this button will call the end_turn function
-play_button = tk.Button(window , text="Finish",bg='white',command = lambda:end_turn(variable,window))
-play_button.place(width=CELL_SIZE, height=CELL_SIZE)
-play_button.grid(row=15 , column=14 , sticky="nsew")
+          
 
 
-freeze_button = ttk.Button(window , text="unfreeze",command = lambda:unfreeze(variable))
-freeze_button.place(width=CELL_SIZE, height=CELL_SIZE)
-freeze_button.grid(row=15 , column=13 , sticky="nsew")
+    #create hand
 
-recall_button = ttk.Button(window , text="recall",command = lambda:recall(variable,window))
-recall_button.place(width=CELL_SIZE, height=CELL_SIZE)
-recall_button.grid(row=15 , column=12 , sticky="nsew")
+    swap_button = ttk.Button(window, text="Swap",command = lambda:swap(variable,window))
+    swap_button.place(width=CELL_SIZE, height=CELL_SIZE)
+    swap_button.grid(row=15 , column=0 , sticky="nsew")
 
-shuffle_button = ttk.Button(window , text="shuffle",command = lambda:shuffle(variable,window))
-shuffle_button.place(width=CELL_SIZE, height=CELL_SIZE)
-shuffle_button.grid(row=15 , column=2 , sticky="nsew")
+    skip_button = ttk.Button(window , text="Skip",command =lambda:skip(variable,window))
+    skip_button.place(width=CELL_SIZE, height=CELL_SIZE)
+    skip_button.grid(row=15 , column=1 , sticky="nsew")
 
-
-points_button = ttk.Button(window , text="0")
-points_button.place(width=CELL_SIZE, height=CELL_SIZE)
-points_button.grid(row=0 , column=17 , sticky="nsew")
-
-
-total_point = ttk.Button(window , text="0")
-total_point.place(width=CELL_SIZE, height=CELL_SIZE)
-total_point.grid(row=1 , column=17 , sticky="nsew")
-
-op_point = ttk.Button(window , text="0")
-op_point.place(width=CELL_SIZE, height=CELL_SIZE)
-op_point.grid(row=2 , column=17 , sticky="nsew")
+                          
+    #this button will call the end_turn function
+    play_button = tk.Button(window , text="Finish",bg='white',command = lambda:end_turn(variable,window))
+    play_button.place(width=CELL_SIZE, height=CELL_SIZE)
+    play_button.grid(row=15 , column=14 , sticky="nsew")
 
 
-current_label = tk.Label(window,text="Current")
-current_label.place(width=CELL_SIZE, height=CELL_SIZE)
-current_label.grid(row=0 , column=15 , sticky="nsew")
+    freeze_button = ttk.Button(window , text="unfreeze",command = lambda:unfreeze(variable))
+    freeze_button.place(width=CELL_SIZE, height=CELL_SIZE)
+    freeze_button.grid(row=15 , column=13 , sticky="nsew")
 
-points_label = tk.Label(window,text="points")
-points_label.place(width=CELL_SIZE, height=CELL_SIZE)
-points_label.grid(row=0 , column=16 , sticky="nsew")
+    recall_button = ttk.Button(window , text="recall",command = lambda:recall(variable,window))
+    recall_button.place(width=CELL_SIZE, height=CELL_SIZE)
+    recall_button.grid(row=15 , column=12 , sticky="nsew")
 
-total_label = tk.Label(window,text="Total")
-total_label.place(width=CELL_SIZE, height=CELL_SIZE)
-total_label.grid(row=1 , column=15 , sticky="nsew")
-
-points2_label = tk.Label(window,text="points")
-points2_label.place(width=CELL_SIZE, height=CELL_SIZE)
-points2_label.grid(row=1 , column=16 , sticky="nsew")
-
-op_label = tk.Label(window,text="Enemy")
-op_label.place(width=CELL_SIZE, height=CELL_SIZE)
-op_label.grid(row=2 , column=15 , sticky="nsew")
-
-points3_label = tk.Label(window,text="points")
-points3_label.place(width=CELL_SIZE, height=CELL_SIZE)
-points3_label.grid(row=2 , column=16 , sticky="nsew")
+    shuffle_button = ttk.Button(window , text="shuffle",command = lambda:shuffle(variable,window))
+    shuffle_button.place(width=CELL_SIZE, height=CELL_SIZE)
+    shuffle_button.grid(row=15 , column=2 , sticky="nsew")
 
 
+    points_button = ttk.Button(window , text="0")
+    points_button.place(width=CELL_SIZE, height=CELL_SIZE)
+    points_button.grid(row=0 , column=17 , sticky="nsew")
 
 
-Turn_label = tk.Label(window,text="Your")
-Turn_label.place(width=CELL_SIZE, height=CELL_SIZE)
-Turn_label.grid(row=5 , column=15 , sticky="nsew")
+    total_point = ttk.Button(window , text="0")
+    total_point.place(width=CELL_SIZE, height=CELL_SIZE)
+    total_point.grid(row=1 , column=17 , sticky="nsew")
 
-Turn2_label = tk.Label(window,text="Turn")
-Turn2_label.place(width=CELL_SIZE, height=CELL_SIZE)
-Turn2_label.grid(row=5 , column=16 , sticky="nsew")
+    op_point = ttk.Button(window , text="0")
+    op_point.place(width=CELL_SIZE, height=CELL_SIZE)
+    op_point.grid(row=2 , column=17 , sticky="nsew")
 
-turn_frame = tk.Frame(window, bg="red")
-turn_frame.grid(row=5, column=17, sticky="nsew") 
 
-for j in range(3,10):
-        frame = tk.Frame(window, bg=colours_hand[j-4] ,)
-        frame.place(width=CELL_SIZE, height=CELL_SIZE) 
-        frame.grid(row=15, column=j, sticky="nsew")
+    current_label = tk.Label(window,text="Current")
+    current_label.place(width=CELL_SIZE, height=CELL_SIZE)
+    current_label.grid(row=0 , column=15 , sticky="nsew")
+
+    points_label = tk.Label(window,text="points")
+    points_label.place(width=CELL_SIZE, height=CELL_SIZE)
+    points_label.grid(row=0 , column=16 , sticky="nsew")
+
+    total_label = tk.Label(window,text="Total")
+    total_label.place(width=CELL_SIZE, height=CELL_SIZE)
+    total_label.grid(row=1 , column=15 , sticky="nsew")
+
+    points2_label = tk.Label(window,text="points")
+    points2_label.place(width=CELL_SIZE, height=CELL_SIZE)
+    points2_label.grid(row=1 , column=16 , sticky="nsew")
+
+    op_label = tk.Label(window,text="Enemy")
+    op_label.place(width=CELL_SIZE, height=CELL_SIZE)
+    op_label.grid(row=2 , column=15 , sticky="nsew")
+
+    points3_label = tk.Label(window,text="points")
+    points3_label.place(width=CELL_SIZE, height=CELL_SIZE)
+    points3_label.grid(row=2 , column=16 , sticky="nsew")
 
 
 
-client_socket = socket.socket()
-host = socket.gethostname()
-port = 5002
 
-client_socket.connect((host, port))
+    Turn_label = tk.Label(window,text="Your")
+    Turn_label.place(width=CELL_SIZE, height=CELL_SIZE)
+    Turn_label.grid(row=5 , column=15 , sticky="nsew")
 
-threading.Thread(target=recieve_message, args=(variable , window)).start()
+    Turn2_label = tk.Label(window,text="Turn")
+    Turn2_label.place(width=CELL_SIZE, height=CELL_SIZE)
+    Turn2_label.grid(row=5 , column=16 , sticky="nsew")
 
-start_game(variable,window)
-window.mainloop()
+    turn_frame = tk.Frame(window, bg="red")
+    turn_frame.grid(row=5, column=17, sticky="nsew") 
+
+    for j in range(3,10):
+            frame = tk.Frame(window, bg=colours_hand[j-4] ,)
+            frame.place(width=CELL_SIZE, height=CELL_SIZE) 
+            frame.grid(row=15, column=j, sticky="nsew")
 
 
+
+    client_socket = socket.socket()
+    
+    variable.setClient_socket(client_socket)
+    
+    host = socket.gethostname()
+    port = 5002
+
+    client_socket.connect((host, port))
+
+    threading.Thread(target=recieve_message, args=(variable , window)).start()
+
+    start_game(variable,window)
+    window.mainloop()
+
+main()
