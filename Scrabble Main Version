@@ -9,111 +9,6 @@ import threading
 import json
 from functools import partial
 #This class is used to call variables needed to be used in functions and need to be changed globally
-class ClassToStoreReturnedVariable:
-    def __init__ (self):
-        self.frozen = True
-        self.tile_bag = (
-        ["A"] * 9 + ["B"] * 2 + ["C"] * 2 + ["D"] * 4 + ["E"] * 12 +
-        ["F"] * 2 + ["G"] * 3 + ["H"] * 2 + ["I"] * 9 + ["J"] * 1 +
-        ["K"] * 1 + ["L"] * 4 + ["M"] * 2 + ["N"] * 6 + ["O"] * 8 +
-        ["P"] * 2 + ["Q"] * 1 + ["R"] * 6 + ["S"] * 4 + ["T"] * 6 +
-        ["U"] * 4 + ["V"] * 2 + ["W"] * 2 + ["X"] * 1 + ["Y"] * 2 + ["Z"] * 1 + ["blank"] * 2)
-        self.tile_bag_amount = 100
-        self.green_grids = []
-        self.grid_locations =[]
-        self.current_locations = []
-        self.side_words = []
-        self.up_words = []
-        self.triple_words = [(0,0),(7,0),(14,0),(0,7),(14,7),(0,14),(7,14),(14,14)]
-        self.double_words = [(1,1),(2,2),(3,3),(4,4),(1,13),(2,12),(3,11),(4,10),(13,1),(12,2),(11,3),(10,4),(13,13),(12,12),(11,11),(10,10),(7,7)]
-        self.triple_letters =[(1,5),(1,9),(5,1),(5,5),(5,9),(5,13),(9,1),(9,5),(9,9),(9,13),(13,5),(13,9)]
-        self.double_letters = [(0, 3),(0, 11),(2, 6),(2, 8),(3, 0),(3, 7),(3, 14),(6, 2),(6, 6),(6, 8),(6, 12),(7, 3),(7, 11),(8, 2),(8, 6),(8, 8),(8, 12),(11, 0),(11, 7),(11, 14),(12, 6),(12, 8),(14, 3),  (14, 11)]
-        self.side_words_multiplied = []   
-        self.up_words_multiplied = []
-        self.total_points = 0
-        self.locked_tiles = []
-        self.op_points = 0
-        self.skipped_turns =  0
-        self.client_socket = ""
-    def setFrozen (self, x):
-        self.frozen = x
-    def getFrozen (self):
-        return self.frozen
-    def setTilebag(self,x):
-        self.tile_bag = x
-    def getTilebag(self):
-        return self.tile_bag
-    def setTilebagamount(self,x):
-        self.tile_bag_amount = x
-    def getTilebagamount(self):
-        return self.tile_bag_amount
-    def setGreen_grids(self,x):
-        self.green_grids = x
-    def getGreen_grids(self):
-        return self.green_grids
-    def setGrid_location(self,x):
-        self.grid_locations = x
-    def getGrid_location(self):
-        return self.grid_locations
-    def setCurrent_location(self,x):
-        self.current_locations = x
-    def getCurrent_location(self):
-        return self.current_locations
-    def setUp_words(self,x):
-        self.up_words = x
-    def getUp_words(self):
-        return self.up_words
-    def setSide_words(self,x):
-        self.side_words = x
-    def getSide_words(self):
-        return self.side_words
-    def setUp_words_multiplied(self,x):
-        self.up_words_multiplied = x
-    def getUp_words_multiplied(self):
-        return self.up_words_multiplied
-    def setSide_words_multiplied(self,x):
-        self.side_words_multiplied = x
-    def getSide_words_multiplied(self):
-        return self.side_words_multiplied
-    def setTriple_words(self,x):
-         self.triple_words = x
-    def getTriple_words(self):
-        return self.triple_words
-    def setDouble_words(self,x):
-        self.double_words = x
-    def getDouble_words(self):
-        return self.double_words
-    def setTriple_letters(self,x):
-        self.triple_letters = x
-    def getTriple_letters(self):
-        return self.triple_letters
-    def setDouble_letters(self,x):
-        self.double_letters = x
-    def getDouble_letters(self):
-        return self.double_letters
-    def setTotal_points(self,x):
-        self.total_points = x
-    def getTotal_points(self):
-        return self.total_points
-    def setLocked_tiles(self,x):
-        self.locked_tiles = x
-    def getLocked_tiles(self):
-        return self.locked_tiles
-    def setOp_points(self,x):
-        self.op_points = x
-    def getOp_points(self):
-        return self.op_points
-    def setSkipped_turns(self,x):
-        self.skipped_turns = x
-    def getSkipped_tunrs(self):
-        return self.skipped_turns
-    def setClient_socket(self,x):
-        self.client_socket = x
-    def getClient_socket(self):
-        return self.client_socket
-
-
-variable = ClassToStoreReturnedVariable()
 
 
 
@@ -1187,7 +1082,7 @@ def shuffle(variable,window):
 
 
 
-def main():
+def scrabble_game():
     class ClassToStoreReturnedVariable:
         def __init__ (self):
             self.frozen = True
@@ -1468,5 +1363,7 @@ def main():
 
     start_game(variable,window)
     window.mainloop()
+    
+if __name__ == "__main__":
+    scrabble_game()
 
-main()
